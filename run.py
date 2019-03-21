@@ -1,8 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
 import sqlite3
 import os
 from tkinter import *
-
-
 
 ################ globals #####################
 global verbose
@@ -10,7 +10,7 @@ global verbose
 verbose = True
 
 
-
+############### classes ######################
 class configure_class:
     def __init__(self):
         self.create_folder()
