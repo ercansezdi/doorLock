@@ -57,6 +57,8 @@ class user_interface(Frame):
         self.frame_two.grid_remove()
         self.parent.attributes("-fullscreen", True)
         self.parent.bind('<Escape>',quit)
+        self.variable = StringVar()
+        self.backup = "test"
 
         self.configure_interface()
         self.start_interface()
@@ -66,27 +68,40 @@ class user_interface(Frame):
             print('>>>user_interface.start_gui() fonksiyonuna giris yapılıyor...')
         #################################### Buttons ##########################################
         self.exitButton = Button(self.frame_one,text = 'Exit',wraplength=750,anchor="center",height=1,width=3,highlightbackground="#000000",font ="Helvetica 15 bold italic",fg='#FFFFFF',command=self.parent.destroy)
-        self.exitButton.grid(row=0,column=1, sticky=W,padx= 150, pady = 0,columnspan=1,rowspan=2)
         #################################### Labels ###########################################
         self.text_1 = Label(self.frame_one,text="Kart Bilgisi Bekleniyor...",borderwidth=0,bg="#008000")
         self.text_1.grid(row=2,column=1,padx=85,pady = 60,rowspan=1,columnspan=1)
+        self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
+
+
 
 
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapılıyor...')
     def data_read(self):
-        data = False
-        if data:
-            pass
+        self.read_data = open("conf/read_data.dat",'r')
+        data = self.read_data.read().split(',')
+        uuid = data[0]
+        date = data[1]
+        clock = data[2]
+
+        if self.backup != uuid:
+            self.backup = uuid
+            start_interface()
+
         else:
-            print("False")
             root.after(1000,run.data_read)
+
+
+
+
 
     def start_interface(self):
         if verbose:
             print('>>>user_interface.start_gui() fonksiyonuna giris yapılıyor...')
+            #self.exitButton.grid(row=0,column=1, sticky=W,padx= 150, pady = 0,columnspan=1,rowspan=2)
 
-
+            self.text_variable.grid(row=3,column=1,padx=85,pady = 60,rowspan=1,columnspan=1)
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapılıyor...')
 if __name__ == "__main__":
