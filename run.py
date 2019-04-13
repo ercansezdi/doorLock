@@ -18,21 +18,28 @@ class configure_class:
     def create_folder(self):
         if verbose:
             print('>>>door_lock.create_folder() fonksiyonuna giris yapılıyor...')
-        operationSystem = str(os.name)
         address = os.getcwd()
-        if operationSystem == 'posix': #Linux
+        if str(os.name) == 'posix': #Linux
+            print('Linux')
             address = address.split('/')
             address = address[0] + '/' + address[1] + '/' + address[2] + '/Desktop'
-            
+            print('X')
+            print(address)
             if not(os.path.exists(address + '/doorLock')):
+                print('Y')
                 os.mkdir(address + '/doorLock')
             address = address  + "/doorLock/"
+            print('X')
             if not(os.path.exists(address + 'database/')):
+                print('Y')
                 os.mkdir(address  + 'database/')
-            if not(os.path.exists(address + 'conf/')):
-                os.mkdir(address + 'conf/')
-
-        if operationSystem == 'nt': # Windows
+                print('X')
+            if not(os.path.exists(address + 'data/')):
+                print('Y')
+                os.mkdir(address + 'data/')
+            print('X')
+        if str(os.name) == 'nt': # Windows
+            print('Windows')
             address = str(address).split('\\')
             address = address[0] + '\\' + address[1] + '\\' + address[2] + '\\Desktop'
 
@@ -41,12 +48,12 @@ class configure_class:
             address = address  + "\\doorLock"
             if not(os.path.exists(address + '\\database')):
                 os.mkdir(address + '\\database')
-            if not(os.path.exists(address +  '\\conf')):
-                os.mkdir(address + '\\conf')
+            if not(os.path.exists(address +  '\\data')):
+                os.mkdir(address + '\\data')
 
         if verbose:
             print('<<<door_lock.create_folder() fonksiyonundan cikis yapılıyor...')
-       
+
 
 
     def create_database(self):
@@ -78,8 +85,20 @@ class user_interface(Frame):
         self.parent.attributes("-fullscreen", True)
         self.parent.bind('<Escape>',quit)
         self.variable = StringVar()
-        self.backup = "test"
+        ################# variables ###################
 
+        self.backup = None
+
+        address = os.getcwd()
+        address = address.split('/')
+        address = address[0] + '/' + address[1] + '/' + address[2] + '/Desktop'
+        if str(os.name) == 'posix': #Linux
+            address = address + '/doorLock'
+        if str(os.name) == 'nt': #Linux
+            address = address + '\\doorLock'
+
+
+        ################ functions ####################
         self.configure_interface()
         self.start_interface()
 
@@ -93,22 +112,26 @@ class user_interface(Frame):
         self.text_1.grid(row=2,column=1,padx=85,pady = 60,rowspan=1,columnspan=1)
         self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
 
-
-
-
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapılıyor...')
     def data_waiting(self):
-        self.read_data = open("conf/read_data.dat",'r')
-        data = self.read_data.read().split(',')
-        uuid = data[0]
-        date = data[1]
-        clock = data[2]
+        try:
+            uuid = None
+            if str(os.name) == 'posix': #Linux
+                self.read_data = open(adress  + "/data/read_uuid.txt",'wr')
+            if str(os.name) == 'nt': #windwos
+                self.read_data = open(adress + "\\data\\read_uuid.txt",'wr')
 
-        if self.backup != uuid:
-            self.backup = uuid
-        else:
-            root.after(1000,run.data_read)
+            uuid = self.read_data.read()
+
+            if self.backup != uuid:
+                self.backup = uuid
+            else:
+                root.after(1000,run.data_waiting)
+
+        except:
+            print('Hata')
+            root.after(1000,run.data_waiting)
 
 
 
