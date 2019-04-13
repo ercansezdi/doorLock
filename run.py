@@ -83,11 +83,14 @@ class user_interface(Frame):
         self.variable = StringVar()
 
         self.address = os.getcwd()
-        self.address = self.address.split('/')
-        self.address = self.address[0] + '/' + self.address[1] + '/' + self.address[2] + '/Desktop'
+
         if str(os.name) == 'posix': #Linux
+            self.address = self.address.split('/')
+            self.address = self.address[0] + '/' + self.address[1] + '/' + self.address[2] + '/Desktop'
             self.address = self.address + '/doorLock'
-        if str(os.name) == 'nt': #Linux
+        if str(os.name) == 'nt': #Windows
+            address = str(address).split('\\')
+            address = address[0] + '\\' + address[1] + '\\' + address[2] + '\\Desktop'
             self.address = self.address + '\\doorLock'
 
 
