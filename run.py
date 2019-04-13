@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-import sqlite3
 import os
 from tkinter import *
 
@@ -19,6 +18,8 @@ class configure_class:
     def create_folder(self):
         if verbose:
             print('>>>door_lock.create_folder() fonksiyonuna giris yapılıyor...')
+        address = os.getcwd()
+        
         if not(os.path.exists('database/')):
             os.mkdir('database/')
         if not(os.path.exists('conf/')):
@@ -78,7 +79,7 @@ class user_interface(Frame):
 
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapılıyor...')
-    def data_read(self):
+    def data_waiting(self):
         self.read_data = open("conf/read_data.dat",'r')
         data = self.read_data.read().split(',')
         uuid = data[0]
@@ -87,8 +88,6 @@ class user_interface(Frame):
 
         if self.backup != uuid:
             self.backup = uuid
-            start_interface()
-
         else:
             root.after(1000,run.data_read)
 
@@ -110,5 +109,5 @@ if __name__ == "__main__":
     root = Tk()
     root.call('tk', 'scaling', 1.0)
     run = user_interface(root)
-    root.after(1000,run.data_read)
+    root.after(1000,run.data_waiting)
     root.mainloop()
