@@ -18,16 +18,35 @@ class configure_class:
     def create_folder(self):
         if verbose:
             print('>>>door_lock.create_folder() fonksiyonuna giris yapılıyor...')
+        operationSystem = str(os.name)
         address = os.getcwd()
-        
-        if not(os.path.exists('database/')):
-            os.mkdir('database/')
-        if not(os.path.exists('conf/')):
-            os.mkdir('conf/')
+        if operationSystem == 'posix': #Linux
+            address = address.split('/')
+            address = address[0] + '/' + address[1] + '/' + address[2] + '/Desktop'
+            
+            if not(os.path.exists(address + '/doorLock')):
+                os.mkdir(address + '/doorLock')
+            address = address  + "/doorLock/"
+            if not(os.path.exists(address + 'database/')):
+                os.mkdir(address  + 'database/')
+            if not(os.path.exists(address + 'conf/')):
+                os.mkdir(address + 'conf/')
+
+        if operationSystem == 'nt': # Windows
+            address = str(address).split('\\')
+            address = address[0] + '\\' + address[1] + '\\' + address[2] + '\\Desktop'
+
+            if not(os.path.exists(address + '\\doorLock')):
+                os.mkdir(address + '\\doorLock')
+            address = address  + "\\doorLock"
+            if not(os.path.exists(address + '\\database')):
+                os.mkdir(address + '\\database')
+            if not(os.path.exists(address +  '\\conf')):
+                os.mkdir(address + '\\conf')
 
         if verbose:
             print('<<<door_lock.create_folder() fonksiyonundan cikis yapılıyor...')
-        self.create_database()
+       
 
 
     def create_database(self):
@@ -98,7 +117,7 @@ class user_interface(Frame):
     def start_interface(self):
         if verbose:
             print('>>>user_interface.start_gui() fonksiyonuna giris yapılıyor...')
-            #self.exitButton.grid(row=0,column=1, sticky=W,padx= 150, pady = 0,columnspan=1,rowspan=2)
+            self.exitButton.grid(row=0,column=1, sticky=W,padx= 150, pady = 0,columnspan=1,rowspan=2)
 
             self.text_variable.grid(row=3,column=1,padx=85,pady = 60,rowspan=1,columnspan=1)
         if verbose:
