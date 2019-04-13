@@ -74,7 +74,9 @@ class user_interface(Frame):
         self.frame_two = Frame(self.parent)
         self.frame_two.grid(row=0,column=0)
         self.frame_two.grid_remove()
-        self.parent.attributes("-fullscreen", True)
+        #self.parent.attributes("-fullscreen", True)
+        self.parent.geometry('330x200')
+        self.parent.title('Kuluçka Merkezi doorLock')
         self.parent.bind('<Escape>',quit)
 
         ################# variables ###################
@@ -89,8 +91,8 @@ class user_interface(Frame):
             self.address = self.address[0] + '/' + self.address[1] + '/' + self.address[2] + '/Desktop'
             self.address = self.address + '/doorLock'
         if str(os.name) == 'nt': #Windows
-            address = str(address).split('\\')
-            address = address[0] + '\\' + address[1] + '\\' + address[2] + '\\Desktop'
+            self.address = str(self.address).split('\\')
+            self.address = self.address[0] + '\\' + self.address[1] + '\\' + self.address[2] + '\\Desktop'
             self.address = self.address + '\\doorLock'
 
 
@@ -116,9 +118,9 @@ class user_interface(Frame):
         self.text_1        = Label(self.frame_one,text="Kart Bilgisi Bekleniyor...",borderwidth=0,bg="#008000")
         self.text_1.grid(row=2,column=1,padx=0,rowspan=1,columnspan=1)
         #self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
-        self.text_2        = Label(self.frame_text_1 ,text="İsim Giriniz                      :",bg="#008000",justify = LEFT)
+        self.text_2        = Label(self.frame_text_1 ,text="İsim Giriniz                       :",bg="#008000",justify = LEFT)
         self.text_2.grid(row=0,column=0,padx=5,pady = 0)
-        self.text_3        = Label(self.frame_text_2,text="Soyisim Giriniz                 :",borderwidth=0,bg="#008000")
+        self.text_3        = Label(self.frame_text_2,text="Soyisim Giriniz                  :",borderwidth=0,bg="#008000")
         self.text_3.grid(row=1,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
         self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarası Giriniz :",borderwidth=0,bg="#008000") #23
         self.text_4.grid(row=2,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
