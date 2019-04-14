@@ -67,17 +67,31 @@ class user_interface(Frame):
     def __init__(self,parent):
         Frame.__init__(self,parent)
         self.parent = parent
+
         self.frame_one = Frame(self.parent)
         self.frame_one.grid(row=0,column=0)
         self.frame_one.grid_remove()
 
+
+
         self.frame_two = Frame(self.parent)
         self.frame_two.grid(row=0,column=0)
         self.frame_two.grid_remove()
+
         #self.parent.attributes("-fullscreen", True)
-        self.parent.geometry('330x200')
-        self.parent.title('Kuluçka Merkezi doorLock')
+        self.parent.geometry('380x200')
         self.parent.bind('<Escape>',quit)
+        self.parent.title('Kuluçka Merkezi doorLock')
+
+        ################# colors ######################
+        self.bg = "#1e0000"
+        self.fg = "#ffffff"
+
+        self.parent.configure(background=self.bg )
+        self.frame_one.configure(background=self.bg )
+        self.frame_two.configure(background=self.bg )
+
+
 
         ################# variables ###################
 
@@ -105,60 +119,108 @@ class user_interface(Frame):
         #################################### Frames ###########################################
         self.frame_text_1 = Frame(self.frame_two)
         self.frame_text_1.grid(row = 0,column = 0,pady = 10,rowspan=1,columnspan =1)
+        self.frame_text_1.configure(background=self.bg )
         self.frame_text_2 = Frame(self.frame_two)
         self.frame_text_2.grid(row = 1,column = 0,pady = 10,rowspan=1,columnspan =1)
+        self.frame_text_2.configure(background=self.bg )
         self.frame_text_3 = Frame(self.frame_two)
         self.frame_text_3.grid(row = 2,column = 0,pady = 10,rowspan=1,columnspan =1)
+        self.frame_text_3.configure(background=self.bg )
 
 
         #################################### Buttons ##########################################
-        self.exitButton    = Button(self.frame_one,text = 'Exit',wraplength=750,anchor="center",height=1,width=3,highlightbackground="#000000",font ="Helvetica 15 bold italic",fg='#FFFFFF',command=self.parent.destroy)
-        self.exitButton.grid(row=3,column=1, sticky=W,padx= 150, pady = 0,columnspan=1,rowspan=2)
+        self.exitButton    = Button(self.frame_one,text = 'Exit',wraplength=750,anchor="center",height=1,width=3,highlightbackground=self.bg,font ="Helvetica 15 bold italic",fg=self.fg,command=self.parent.destroy)
+        #self.exitButton.grid(row=3,column=1, sticky=W,padx= 150, pady = 0,columnspan=1,rowspan=2)
+        self.sendButton    = Button(self.frame_two,text = 'Bilgiyi Gönder',wraplength=750,anchor="center",height=1,width=13,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.send_data)
+        self.sendButton.grid(row=3,column=0, sticky=W,padx= 120, pady = 25,columnspan=2,rowspan=1)
+
+
+
         #################################### Labels ###########################################
-        self.text_1        = Label(self.frame_one,text="Kart Bilgisi Bekleniyor...",borderwidth=0,bg="#008000")
-        self.text_1.grid(row=2,column=1,padx=0,rowspan=1,columnspan=1)
+        self.text_1        = Label(self.frame_one,text="Kart Bilgisi Bekleniyor...",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
+        self.text_1.grid(row=0,column=1,padx=25,pady=80,rowspan=3,columnspan=2)
         #self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
-        self.text_2        = Label(self.frame_text_1 ,text="İsim Giriniz                       :",bg="#008000",justify = LEFT)
+        self.text_2        = Label(self.frame_text_1 ,text=" İsim Giriniz                            :",bg=self.bg,fg=self.fg,justify = LEFT,font ="Helvetica 15 bold italic")
         self.text_2.grid(row=0,column=0,padx=5,pady = 0)
-        self.text_3        = Label(self.frame_text_2,text="Soyisim Giriniz                  :",borderwidth=0,bg="#008000")
+        self.text_3        = Label(self.frame_text_2,text=" Soyisim Giriniz                     : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_3.grid(row=1,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
-        self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarası Giriniz :",borderwidth=0,bg="#008000") #23
+        self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarası Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_4.grid(row=2,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
         #################################### Enty ############################################
 
-        self.name          = Entry(self.frame_text_1)
-        self.name.grid(row=0,column=1,padx=0,pady = 0)
-        self.surname       = Entry(self.frame_text_2)
+        self.name          = Entry(self.frame_text_1,font ="Helvetica 12 bold italic")
+        self.name.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
+        self.surname       = Entry(self.frame_text_2,font ="Helvetica 12 bold italic")
         self.surname.grid(row=1,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
-        self.studentNumber = Entry(self.frame_text_3)
+        self.studentNumber = Entry(self.frame_text_3,font ="Helvetica 12 bold italic")
         self.studentNumber.grid(row=2,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
-
-
-
 
 
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapılıyor...')
-    def data_waiting(self):
+    def send_data(self):
+        if self.name.get() == "" or self.name.get() == " " or self.name.get() == " " or self.name.get() == "   ":
+            self.name.insert(0, '')
+            self.name.insert(0, 'Boş Bırakılamaz.')
+        if self.surname.get() == "" or self.surname.get() == " " or self.surname.get() == "  " or self.surname.get() == "   ":
+            self.surname.insert(0, 'Boş Bırakılamaz.')
+        if self.studentNumber.get() == ""  or self.studentNumber.get() == " " or self.studentNumber.get() == "  " or self.studentNumber.get() == "   ":
+            self.studentNumber.insert(0, 'Boş Bırakılamaz.')
 
+        if self.name.get() != "" and self.name.get() != "Boş Bırakılamaz." and self.name.get() != " " and self.name.get() != " " and self.name.get() != "   ":
+            if self.surname.get() != "" and self.surname.get() != "Boş Bırakılamaz." and self.surname.get() != " " and self.surname.get() != "  " and self.surname.get() != "   ":
+                if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Bırakılamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
+                    print("""
+                    Gönderilecek Veriler:
+                    Name          : {}
+                    Surname       : {}
+                    Numarası      : {}
+                    Kart Numarası : {}
+                    """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.uuid))
+
+
+                    self.name.delete(0, "end")
+                    self.surname.delete(0, "end")
+                    self.studentNumber.delete(0, "end")
+                    self.start_interface()
+                    root.after(3000,run.data_waiting)
+
+                else:
+                    pass
+            else:
+                pass
+        else:
+            pass
+
+
+
+
+
+    def data_waiting(self):
+        self.uuid = None
         try:
-            self.uuid = None
             if str(os.name) == 'posix': #Linux
                 self.read_data = open(self.address  + "/data/read_uuid.txt",'r')
             if str(os.name) == 'nt': #windwos
                 self.read_data = open(self.address + "\\data\\read_uuid.txt",'r')
             self.uuid = self.read_data.read()
+            self.read_data.close()
+            if str(os.name) == 'posix': #Linux
+                os.remove(self.address  + "/data/read_uuid.txt")
+            if str(os.name) == 'nt': #Windows
+                os.remove(self.address  + "\\data\\read_uuid.txt")
         except:
             if verbose:
                 print('Veri Bekleniyor..')
 
-        if self.backup != self.uuid:
+        if self.backup != self.uuid and self.uuid != "" and self.uuid != None:
             self.backup = self.uuid
             self.data_read()
         else:
             root.after(1000,run.data_waiting)
     def data_read(self):
-        print('Veri Okundu.')
+        if verbose:
+            print('Veri Okundu.')
         self.read_data_interface()
 
     def read_data_interface(self):
@@ -168,6 +230,7 @@ class user_interface(Frame):
             self.frame_two.grid(row = 0 ,column = 0)
 
 
+
         if verbose:
             print('<<<user_interface.read_data_interface() fonksiyonundan cikis yapılıyor...')
     def start_interface(self):
@@ -175,6 +238,7 @@ class user_interface(Frame):
             print('>>>user_interface.start_interface() fonksiyonuna giris yapılıyor...')
             self.frame_two.grid_remove()
             self.frame_one.grid(row = 0 ,column =0)
+
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
             print('<<<user_interface.start_interface() fonksiyonundan cikis yapılıyor...')
