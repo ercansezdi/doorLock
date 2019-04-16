@@ -4,6 +4,8 @@ import os
 from datetime import datetime
 import sqlite3
 import configparser
+from threading import Thread
+
 
 global verbose
 global rfid_yes
@@ -18,10 +20,36 @@ class raspi:
         self.klasor_olustur()
         config.read(self.address + "conf/configuration.cfg")
         self.manyetik_kapi_port = 3
+        self.kirmizi=29
+        self.yesil=31
+        self.mavi =33
         if rfid_yes:
             signal.signal(signal.SIGINT, self.end_read)
             self.MIFAREReader = MFRC522.MFRC522()
-
+    def redOn(self):
+        GPIO.output(self.kirmizi,GPIO.LOW)
+        GPIO.output(self.yesil  ,GPIO.HIGH)
+        GPIO.output(self.mavi   ,GPIO.HIGH)
+        sleep(int(config['veri']['lamba_suresi']))
+        GPIO.output(self.kirmizi,GPIO.HIGH)
+        GPIO.output(self.yesil  ,GPIO.HIGH)
+        GPIO.output(self.mavi  ,GPIO.HIGH)
+    def greenOn(self):
+        GPIO.output(self.kirmizi,GPIO.HIGH)
+        GPIO.output(self.yesil,GPIO.LOW)
+        GPIO.output(self.mavi ,GPIO.HIGH)
+        sleep(int(config['veri']['lamba_suresi']))
+        GPIO.output(self.kirmizi,GPIO.HIGH)
+        GPIO.output(self.yesil,GPIO.HIGH)
+        GPIO.output(self.mavi,GPIO.HIGH)
+    def blueOn(self):
+        GPIO.output(self.kirmizi,GPIO.HIGH)
+        GPIO.output(self.yesil,GPIO.HIGH)
+        GPIO.output(self.mavi ,GPIO.LOW)
+        sleep(int(config['veri']['lamba_suresi']))
+        GPIO.output(self.kirmizi,GPIO.HIGH)
+        GPIO.output(self.yesil,GPIO.HIGH)
+        GPIO.output(self.mavi,GPIO.HIGH)
 
     def klasor_olustur(self):
         if verbose:
@@ -67,6 +95,9 @@ class raspi:
         GPIO.setwarnings(False)
 
         GPIO.setup(self.manyetik_kapi_port,GPIO.OUT) #3. pin manyetik kapi kilidi +
+        GPIO.setup(self.kirmizi,GPIO.OUT)
+        GPIO.setup(self.yesil  ,GPIO.OUT)
+        GPIO.setup(self.mavi  ,GPIO.OUT)
         if verbose:
             print('<<<raspi.pin_tanimla() fonksiyonundan cikis yapiliyor...')
         GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
@@ -118,7 +149,7 @@ class raspi:
                 uuid = okunanVeri[2]
             except:
                 hata = False
-            if hata: # yeni self.veri gelmis
+            if hata: # yeni veri gelmis
                 buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(uuid) + "')").fetchone()[0]
 
                 if buKisiEklimi == 0:#bu kişi ekli değil ekle
@@ -126,7 +157,7 @@ class raspi:
                     self.data.commit()
                 else:
                     pass
-            else: # yeni self.veri gelmemis kart okumayı kontrol et
+            else: # yeni veri gelmemis kart okumayı kontrol et
                 pass
                 if rfid_yes:
                     (status,TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
@@ -139,11 +170,14 @@ class raspi:
                     #
                     buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(okunanKart) + "')").fetchone()[0]
                     if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                        pass
+                        izin = Thread(target=self.kilitle)
+                        rgb = Thread(target=self.redOn)
                     else:
-                        self.kilit_ac()
+                        izin = Thread(target=self.kilit_ac)
+                        rgb = Thread(target=self.greenOn                                                                                  )
 
-
+                    izin.start()
+                    rgb.start()
 
 
 if __name__ == "__main__":
