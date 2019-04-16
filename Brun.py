@@ -17,7 +17,7 @@ class configure_class:
 
     def create_folder(self):
         if verbose:
-            print('>>>door_lock.create_folder() fonksiyonuna giris yapılıyor...')
+            print('>>>door_lock.create_folder() fonksiyonuna giris yapiliyor...')
         address = os.getcwd()
         if str(os.name) == 'posix': #Linux
             address = address.split('/')
@@ -42,13 +42,13 @@ class configure_class:
                 os.mkdir(address + '\\data')
 
         if verbose:
-            print('<<<door_lock.create_folder() fonksiyonundan cikis yapılıyor...')
+            print('<<<door_lock.create_folder() fonksiyonundan cikis yapiliyor...')
 
 
 
     def create_database(self):
         if verbose:
-            print('>>>door_lock.create_database() fonksiyonuna giris yapılıyor...')
+            print('>>>door_lock.create_database() fonksiyonuna giris yapiliyor...')
         data = sqlite3.connect("database/members.db").cursor()
         if data.execute("SELECT name FROM sqlite_master").fetchone() == None:
             data.execute("""CREATE TABLE {} (
@@ -62,7 +62,7 @@ class configure_class:
 
 
         if verbose:
-            print('<<<door_lock.create_folder() fonksiyonundan cikis yapılıyor...')
+            print('<<<door_lock.create_folder() fonksiyonundan cikis yapiliyor...')
 class user_interface(Frame):
     def __init__(self,parent):
         Frame.__init__(self,parent)
@@ -115,7 +115,7 @@ class user_interface(Frame):
         self.start_interface()
     def configure_interface(self):
         if verbose:
-            print('>>>user_interface.start_gui() fonksiyonuna giris yapılıyor...')
+            print('>>>user_interface.start_gui() fonksiyonuna giris yapiliyor...')
         #################################### Frames ###########################################
         self.frame_text_1 = Frame(self.frame_two)
         self.frame_text_1.grid(row = 0,column = 0,pady = 10,rowspan=1,columnspan =1)
@@ -144,7 +144,7 @@ class user_interface(Frame):
         self.text_2.grid(row=0,column=0,padx=5,pady = 0)
         self.text_3        = Label(self.frame_text_2,text=" Soyisim Giriniz                     : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_3.grid(row=1,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
-        self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarası Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
+        self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarasi Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_4.grid(row=2,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
         #################################### Enty ############################################
 
@@ -157,25 +157,25 @@ class user_interface(Frame):
 
 
         if verbose:
-            print('<<<user_interface.start_gui() fonksiyonundan cikis yapılıyor...')
+            print('<<<user_interface.start_gui() fonksiyonundan cikis yapiliyor...')
     def send_data(self):
         if self.name.get() == "" or self.name.get() == " " or self.name.get() == " " or self.name.get() == "   ":
             self.name.insert(0, '')
-            self.name.insert(0, 'Boş Bırakılamaz.')
+            self.name.insert(0, 'Boş Birakilamaz.')
         if self.surname.get() == "" or self.surname.get() == " " or self.surname.get() == "  " or self.surname.get() == "   ":
-            self.surname.insert(0, 'Boş Bırakılamaz.')
+            self.surname.insert(0, 'Boş Birakilamaz.')
         if self.studentNumber.get() == ""  or self.studentNumber.get() == " " or self.studentNumber.get() == "  " or self.studentNumber.get() == "   ":
-            self.studentNumber.insert(0, 'Boş Bırakılamaz.')
+            self.studentNumber.insert(0, 'Boş Birakilamaz.')
 
-        if self.name.get() != "" and self.name.get() != "Boş Bırakılamaz." and self.name.get() != " " and self.name.get() != " " and self.name.get() != "   ":
-            if self.surname.get() != "" and self.surname.get() != "Boş Bırakılamaz." and self.surname.get() != " " and self.surname.get() != "  " and self.surname.get() != "   ":
-                if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Bırakılamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
+        if self.name.get() != "" and self.name.get() != "Boş Birakilamaz." and self.name.get() != " " and self.name.get() != " " and self.name.get() != "   ":
+            if self.surname.get() != "" and self.surname.get() != "Boş Birakilamaz." and self.surname.get() != " " and self.surname.get() != "  " and self.surname.get() != "   ":
+                if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Birakilamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
                     print("""
                     Gönderilecek Veriler:
                     Name          : {}
                     Surname       : {}
-                    Numarası      : {}
-                    Kart Numarası : {}
+                    Numarasi      : {}
+                    Kart Numarasi : {}
                     """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.uuid))
 
 
@@ -225,23 +225,23 @@ class user_interface(Frame):
 
     def read_data_interface(self):
         if verbose:
-            print('>>>user_interface.read_data_interface() fonksiyonuna giris yapılıyor...')
+            print('>>>user_interface.read_data_interface() fonksiyonuna giris yapiliyor...')
             self.frame_one.grid_remove()
             self.frame_two.grid(row = 0 ,column = 0)
 
 
 
         if verbose:
-            print('<<<user_interface.read_data_interface() fonksiyonundan cikis yapılıyor...')
+            print('<<<user_interface.read_data_interface() fonksiyonundan cikis yapiliyor...')
     def start_interface(self):
         if verbose:
-            print('>>>user_interface.start_interface() fonksiyonuna giris yapılıyor...')
+            print('>>>user_interface.start_interface() fonksiyonuna giris yapiliyor...')
             self.frame_two.grid_remove()
             self.frame_one.grid(row = 0 ,column =0)
 
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
-            print('<<<user_interface.start_interface() fonksiyonundan cikis yapılıyor...')
+            print('<<<user_interface.start_interface() fonksiyonundan cikis yapiliyor...')
 if __name__ == "__main__":
     connect = configure_class()
     root = Tk()
