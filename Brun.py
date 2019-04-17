@@ -102,13 +102,6 @@ class user_interface(Frame):
 
 
 
-<<<<<<< HEAD
-
-
-        ################# variables ###################
-=======
->>>>>>> 49e187e36881a6cbde1b1c8947ade694befd16df
-
         ################# variables ###################
         self.variable1 = StringVar()
         self.variable2 = StringVar()
@@ -205,12 +198,9 @@ class user_interface(Frame):
                     self.name.delete(0, "end")
                     self.surname.delete(0, "end")
                     self.studentNumber.delete(0, "end")
-<<<<<<< HEAD
                     root.after(1000,run.data_waiting)
                     restart_data = Thread(target=self.start_interface)
-=======
                     restart_data = Thread(target=self.waiting)
->>>>>>> 49e187e36881a6cbde1b1c8947ade694befd16df
                     send = Thread(target=self.send_raspberry)
                     restart_data.start()
                     send.start()
@@ -224,14 +214,6 @@ class user_interface(Frame):
             pass
 
 
-<<<<<<< HEAD
-
-
-    def send_raspberry(self):
-
-        self.hata = False
-        while not(self.hata):
-=======
     def waiting(self):
         self.frame_two.grid_remove()
         self.frame_three.grid(row = 0, column = 0)
@@ -257,8 +239,6 @@ class user_interface(Frame):
                 self.hata = False
             sleep(0.5)
         self.ending()
->>>>>>> 49e187e36881a6cbde1b1c8947ade694befd16df
-
             try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
