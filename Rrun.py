@@ -7,7 +7,7 @@ import configparser
 from threading import Thread
 import signal
 import MFRC522
-
+import socket
 
 global verbose
 global rfid_yes
@@ -15,7 +15,7 @@ global config
 
 
 config = configparser.ConfigParser()
-rfid_yes = True
+rfid_yes = False
 verbose = True
 class raspi:
     def __init__(self):
@@ -103,7 +103,10 @@ class raspi:
         if verbose:
             print('<<<raspi.pin_tanimla() fonksiyonundan cikis yapiliyor...')
         GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
-        self.loop()
+        commit = Thread(target=self.commit_data)
+        basla = Thread(target=self.loop)
+        commit.start()
+        basla.start()
 
 
     def kilitle(self):
@@ -132,7 +135,19 @@ class raspi:
         global continue_reading
         continue_reading = False
         GPIO.cleanup()
-
+    def commit_data(self):
+        try:
+            mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+            mysocket.listen(5)
+            (client, (ip,port)) = mysocket.accept()
+            data = client.recv(config['veri']['raspberry_buffer_size'])
+            self.okunanVeri = data.decode()
+            mysocket.close()
+        except:
+            if verbose:
+                print('Hata Veri bekleniyor')
+            self.commit_data()
     def loop(self):
         if verbose:
             print("Waiting data . . .")
@@ -141,14 +156,11 @@ class raspi:
             hata = True
             try:
 
-                self.read_data = open(self.address  + "/data/read_uuid.txt",'r')
-                okunanVeri = self.read_data.read()
-                self.read_data.close()
-                os.remove(self.address  + "/data/read_uuid.txt")
-                okunanVeri = okunanVeri.split(",")
-                ad_soyad  = okunanVeri[0]
-                numara = okunanVeri[1]
-                uuid = okunanVeri[2]
+
+                self.okunanVeri = self.okunanVeri.split(",")
+                ad_soyad  = self.okunanVeri[0]
+                numara = self.okunanVeri[1]
+                uuid = self.okunanVeri[2]
             except:
                 hata = False
             if hata: # yeni veri gelmis
