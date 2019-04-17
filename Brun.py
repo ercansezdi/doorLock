@@ -81,6 +81,10 @@ class user_interface(Frame):
         self.frame_two.grid(row=0,column=0)
         self.frame_two.grid_remove()
 
+        self.frame_three = Frame(self.parent)
+        self.frame_three.grid(row=0,column=0)
+        self.frame_three.grid_remove()
+
         #self.parent.attributes("-fullscreen", True)
         self.parent.geometry('380x200')
         self.parent.bind('<Escape>',quit)
@@ -93,16 +97,19 @@ class user_interface(Frame):
         self.parent.configure(background=self.bg )
         self.frame_one.configure(background=self.bg )
         self.frame_two.configure(background=self.bg )
+        self.frame_three.configure(background=self.bg )
 
 
 
 
 
         ################# variables ###################
-
+        self.variable1 = StringVar()
+        self.variable2 = StringVar()
         self.backup = None
         self.variable = StringVar()
         self.address = os.getcwd()
+        self.dot = "."
 
         if str(os.name) == 'posix': #Linux
             self.address = self.address.split('/')
@@ -142,8 +149,9 @@ class user_interface(Frame):
 
 
         #################################### Labels ###########################################
-        self.text_1        = Label(self.frame_one,text="Kart Bilgisi Bekleniyor...",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
+        self.text_1        = Label(self.frame_one,textvariable=self.variable1,borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
         self.text_1.grid(row=0,column=1,padx=25,pady=80,rowspan=3,columnspan=2)
+        self.variable1.set("Kart Bilgisi Bekleniyor")
         #self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
         self.text_2        = Label(self.frame_text_1 ,text=" İsim Giriniz                            :",bg=self.bg,fg=self.fg,justify = LEFT,font ="Helvetica 15 bold italic")
         self.text_2.grid(row=0,column=0,padx=5,pady = 0)
@@ -151,6 +159,9 @@ class user_interface(Frame):
         self.text_3.grid(row=1,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
         self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarasi Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_4.grid(row=2,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
+        self.text_5        = Label(self.frame_three,textvariable=self.variable2,borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
+        self.text_5.grid(row=0,column=1,padx=25,pady=80,rowspan=3,columnspan=2)
+        self.variable2.set("Bilgiler Gönderiliyor")
         #################################### Enty ############################################
 
         self.name          = Entry(self.frame_text_1,font ="Helvetica 12 bold italic")
@@ -188,8 +199,7 @@ class user_interface(Frame):
                     self.name.delete(0, "end")
                     self.surname.delete(0, "end")
                     self.studentNumber.delete(0, "end")
-                    root.after(1000,run.data_waiting)
-                    restart_data = Thread(target=self.start_interface)
+                    restart_data = Thread(target=self.waiting)
                     send = Thread(target=self.send_raspberry)
                     restart_data.start()
                     send.start()
@@ -203,13 +213,19 @@ class user_interface(Frame):
             pass
 
 
-
-
+    def waiting(self):
+        self.frame_two.grid_remove()
+        self.frame_three.grid(row = 0, column = 0)
+    def ending(self):
+        root.after(1000,run.data_waiting)
+        self.start_interface()
     def send_raspberry(self):
-
         self.hata = False
         while not(self.hata):
-
+            self.dot = self.dot + '.'
+            if self.dot == '....':
+                self.dot = ""
+            self.variable2.set("Bilgiler Gönderiliyor" + self.dot)
             try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
@@ -219,10 +235,16 @@ class user_interface(Frame):
                 veri.close()
                 self.hata = True
             except:
-                sleep(0.5)
                 self.hata = False
+            sleep(0.5)
+        self.ending()
+
     def data_waiting(self):
         self.uuid = None
+        self.dot = self.dot + '.'
+        if self.dot == '....':
+            self.dot = ""
+        self.variable1.set("Kart Bilgisi Bekleniyor" + self.dot)
         try:
             if str(os.name) == 'posix': #Linux
                 self.read_data = open(self.address  + "/data/read_uuid.txt",'r')
@@ -240,19 +262,16 @@ class user_interface(Frame):
 
         if self.backup != self.uuid and self.uuid != "" and self.uuid != None:
             self.backup = self.uuid
-            self.data_read()
+            self.read_data_interface()
         else:
             root.after(1000,run.data_waiting)
-    def data_read(self):
-        if verbose:
-            print('Veri Okundu.')
-        self.read_data_interface()
 
     def read_data_interface(self):
         if verbose:
             print('>>>user_interface.read_data_interface() fonksiyonuna giris yapiliyor...')
             self.frame_one.grid_remove()
             self.frame_two.grid(row = 0 ,column = 0)
+            self.frame_three.grid_remove()
 
 
 
@@ -261,8 +280,11 @@ class user_interface(Frame):
     def start_interface(self):
         if verbose:
             print('>>>user_interface.start_interface() fonksiyonuna giris yapiliyor...')
-            self.frame_two.grid_remove()
             self.frame_one.grid(row = 0 ,column =0)
+            self.frame_two.grid_remove()
+            self.frame_three.grid_remove()
+
+
 
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
