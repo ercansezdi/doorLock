@@ -5,6 +5,8 @@ from datetime import datetime
 import sqlite3
 import configparser
 from threading import Thread
+import signal
+import MFRC522
 
 
 global verbose
@@ -13,7 +15,7 @@ global config
 
 
 config = configparser.ConfigParser()
-rfid_yes = False
+rfid_yes = True
 verbose = True
 class raspi:
     def __init__(self):

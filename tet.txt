@@ -1,0 +1,5 @@
+git clone https://github.com/lthiery/SPI-Py.git indir 
+
+cd SPI-Py/
+
+sudo python3 setup.py install ;sudo  python setup.py install
