@@ -2,12 +2,17 @@
 # -*- coding: utf8 -*-
 import os
 from tkinter import *
-
+import socket
+from threading import Thread
+from time import sleep
+import configparser
 ################ globals #####################
 global verbose
+global config
+
 
 verbose = True
-
+config = configparser.ConfigParser()
 
 ############### classes ######################
 class configure_class:
@@ -72,8 +77,6 @@ class user_interface(Frame):
         self.frame_one.grid(row=0,column=0)
         self.frame_one.grid_remove()
 
-
-
         self.frame_two = Frame(self.parent)
         self.frame_two.grid(row=0,column=0)
         self.frame_two.grid_remove()
@@ -93,23 +96,25 @@ class user_interface(Frame):
 
 
 
+
+
         ################# variables ###################
 
         self.backup = None
         self.variable = StringVar()
-
         self.address = os.getcwd()
 
         if str(os.name) == 'posix': #Linux
             self.address = self.address.split('/')
             self.address = self.address[0] + '/' + self.address[1] + '/' + self.address[2] + '/Desktop'
             self.address = self.address + '/doorLock'
+            config.read(self.address + "/conf/configuration.cfg")
         if str(os.name) == 'nt': #Windows
             self.address = str(self.address).split('\\')
             self.address = self.address[0] + '\\' + self.address[1] + '\\' + self.address[2] + '\\Desktop'
             self.address = self.address + '\\doorLock'
-
-
+            config.read(self.address + "\\conf\\configuration.cfg")
+            print(self.address + "\\conf\\configuration.cfg")
         ################ functions ####################
         self.configure_interface()
         self.start_interface()
@@ -170,20 +175,25 @@ class user_interface(Frame):
         if self.name.get() != "" and self.name.get() != "Boş Birakilamaz." and self.name.get() != " " and self.name.get() != " " and self.name.get() != "   ":
             if self.surname.get() != "" and self.surname.get() != "Boş Birakilamaz." and self.surname.get() != " " and self.surname.get() != "  " and self.surname.get() != "   ":
                 if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Birakilamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
-                    print("""
-                    Gönderilecek Veriler:
-                    Name          : {}
-                    Surname       : {}
-                    Numarasi      : {}
-                    Kart Numarasi : {}
-                    """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.uuid))
-
+                    if verbose:
+                        print("""
+                        Gönderilecek Veriler:
+                        Name          : {}
+                        Surname       : {}
+                        Numarasi      : {}
+                        Kart Numarasi : {}
+                        """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.uuid))
+                    self.send_data_ = str(self.name.get()) + " " + str(self.surname.get()) + "," + str(self.studentNumber.get()) + "," + str(self.uuid)
 
                     self.name.delete(0, "end")
                     self.surname.delete(0, "end")
                     self.studentNumber.delete(0, "end")
-                    self.start_interface()
-                    root.after(3000,run.data_waiting)
+                    root.after(1000,run.data_waiting)
+                    restart_data = Thread(target=self.start_interface)
+                    send = Thread(target=self.send_raspberry)
+                    restart_data.start()
+                    send.start()
+
 
                 else:
                     pass
@@ -195,7 +205,22 @@ class user_interface(Frame):
 
 
 
+    def send_raspberry(self):
 
+        self.hata = False
+        while not(self.hata):
+
+            try:
+                veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+                self.send_data_ = self.send_data_.encode('utf-8')
+                veri.send(self.send_data_)
+                #data = s.recv(1024) #alinan veri
+                veri.close()
+                self.hata = True
+            except:
+                sleep(0.5)
+                self.hata = False
     def data_waiting(self):
         self.uuid = None
         try:
