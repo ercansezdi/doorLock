@@ -25,6 +25,7 @@ class raspi:
         self.kirmizi=29
         self.yesil=31
         self.mavi =33
+        self.gonderme_onay = False
         if rfid_yes:
             signal.signal(signal.SIGINT, self.end_read)
             self.MIFAREReader = MFRC522.MFRC522()
@@ -52,7 +53,6 @@ class raspi:
         GPIO.output(self.kirmizi,GPIO.HIGH)
         GPIO.output(self.yesil,GPIO.HIGH)
         GPIO.output(self.mavi,GPIO.HIGH)
-
     def klasor_olustur(self):
         if verbose:
             print('>>>raspi.klasor_olustur() fonksiyonuna giris yapiliyor...')
@@ -70,8 +70,6 @@ class raspi:
         if verbose:
             print('<<<raspi.klasor_olustur() fonksiyonundan cikis yapiliyor...')
         self.database_tanimla()
-
-
     def database_tanimla(self):
         if verbose:
             print('>>>raspi.database_tanimla() fonksiyonuna giris yapiliyor...')
@@ -88,8 +86,6 @@ class raspi:
             pass
         if verbose:
             print('<<<raspi.database_tanimla() fonksiyonundan cikis yapiliyor...')
-
-
     def pin_tanimla(self):
         if verbose:
             print('>>>raspi.pin_tanimla() fonksiyonuna giris yapiliyor...')
@@ -107,8 +103,6 @@ class raspi:
         basla = Thread(target=self.loop)
         commit.start()
         basla.start()
-
-
     def kilitle(self):
         if verbose:
             print('>>>raspi.kilitle() fonksiyonuna giris yapiliyor...')
@@ -136,18 +130,23 @@ class raspi:
         continue_reading = False
         GPIO.cleanup()
     def commit_data(self):
-        try:
-            mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-            mysocket.listen(5)
-            (client, (ip,port)) = mysocket.accept()
-            data = client.recv(config['veri']['raspberry_buffer_size'])
-            self.okunanVeri = data.decode()
-            mysocket.close()
-        except:
-            if verbose:
-                print('Hata Veri bekleniyor')
-            self.commit_data()
+        self.gonderme_onay = True
+        while self.gonderme_onay:
+            #try:
+            if True:
+                mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+                mysocket.listen(5)
+                (client, (ip,port)) = mysocket.accept()
+                data = client.recv(int(config['veri']['raspberry_buffer_size']))
+                self.okunanVeri = data.decode()
+                self.gonderme_onay = False
+                mysocket.close()
+
+            #except:
+            #    if verbose:
+            #        print('Hata Veri bekleniyor')
+
     def loop(self):
         if verbose:
             print("Waiting data . . .")
@@ -156,6 +155,9 @@ class raspi:
             hata = True
             try:
 
+                if not(self.gonderme_onay):
+                    averi  = Thread(target=self.commit_data)
+                    averi.start()
 
                 self.okunanVeri = self.okunanVeri.split(",")
                 ad_soyad  = self.okunanVeri[0]
@@ -164,6 +166,8 @@ class raspi:
             except:
                 hata = False
             if hata: # yeni veri gelmis
+                self.data = sqlite3.connect(self.address + "database/members.db")
+                self.veri = self.data.cursor()
                 buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(uuid) + "')").fetchone()[0]
 
                 if buKisiEklimi == 0:#bu kişi ekli değil ekle
