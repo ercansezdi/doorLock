@@ -111,6 +111,7 @@ class user_interface(Frame):
         self.variable1 = StringVar()
         self.variable2 = StringVar()
         self.variable3 = StringVar()
+        self.serial_port = 'X'
         self.backup = "loop_end"
         self.variable = StringVar()
         self.address = os.getcwd()
@@ -128,10 +129,21 @@ class user_interface(Frame):
             self.address = self.address[0] + '\\' + self.address[1] + '\\' + self.address[2] + '\\Desktop'
             self.address = self.address + '\\doorLock'
             config.read(self.address + "\\conf\\configuration.cfg")
-            print(self.address + "\\conf\\configuration.cfg")
         ################ functions ####################
+        self.ip_adres_ogren()
         self.configure_interface()
         self.start_interface()
+    def ip_adres_ogren(self):
+        try:
+            ip = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ip.connect(("8.8.8.8", 80))
+            self.ip_adres = (ip.getsockname()[0])
+            ip.close()
+        except Exception as error_name:
+            if verbose:
+                print(error_name)
+            else:
+                pass
     def configure_interface(self):
         if verbose:
             print('>>>user_interface.start_gui() fonksiyonuna giris yapiliyor...')
@@ -201,31 +213,53 @@ class user_interface(Frame):
             self.menu.add_cascade(label=b, command=self.serial_degistir)
     def read_serial(self):
         if self.serial_durdur != "loop_end":
-            port_counter = 0
-            hata = True
-            port_x = "COM"
-            while hata:
-                try:
-                    port = port_x + str(port_counter)
-                    ard = serial.Serial(port ,9600,timeout=2)
-                    hata = False
-                except:
-                    port_counter = port_counter + 1
+            if self.serial_port == 'X':
+                port_counter = 0
+                hata = True
+                port_x = "COM"
+                while hata:
+                    try:
+                        port = port_x + str(port_counter)
+                        ard = serial.Serial(port ,9600,timeout=2)
+                        hata = False
+                        self.serial_port = port
+                    except Exception as error_name:
+                        if verbose:
+                            print(error_name)
+                        else:
+                            pass
+                        port_counter = port_counter + 1
 
-            # Serial read section
-            msg = ard.readline()
-            if str(msg) != "b''":
-                self.message = ""
-                for i in str(msg):
-                    if i != "'" and i != 'b':
-                        self.message = self.message + i
+                # Serial read section
+                msg = ard.readline()
+                if str(msg) != "b''":
+                    self.message = ""
+                    for i in str(msg):
+                        if i != "'" and i != 'b':
+                            self.message = self.message + i
 
-                self.message = str(self.message).split(" ")
-                self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
-                if verbose:
-                    print("Read card : ",self.message)
+                    self.message = str(self.message).split(" ")
+                    self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
+                    if verbose:
+                        print("Read card : ",self.message)
+                else:
+                    self.message = ""
             else:
-                self.message = ""
+                ard = serial.Serial(self.serial_port ,9600,timeout=2)
+                msg = ard.readline()
+                if str(msg) != "b''":
+                    self.message = ""
+                    for i in str(msg):
+                        if i != "'" and i != 'b':
+                            self.message = self.message + i
+
+                    self.message = str(self.message).split(" ")
+                    self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
+                    if verbose:
+                        print("Read card : ",self.message)
+                else:
+                    self.message = ""
+
         root.after(300,run.read_serial)
     def send_data(self):
         if verbose:
@@ -270,7 +304,6 @@ class user_interface(Frame):
                 pass
         else:
             pass
-
     def waiting(self):
         self.frame_two.grid_remove()
         self.frame_three.grid(row = 0, column = 0)
@@ -287,20 +320,23 @@ class user_interface(Frame):
             if True:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-                print(self.send_data_)
                 self.send_data_ = self.send_data_.encode('utf-8')
                 veri.send(self.send_data_)
                 #data = s.recv(1024) #alinan veri
                 veri.close()
                 self.hata = True
-            #except:
-            #    self.hata = False
+            """
+            except Exception as error_name:
+                if verbose:
+                    print(error_name)
+                else:
+                    pass
+                self.hata = False"""
         self.backup = None
         if verbose:
             print('<<<user_interface.send_raspberry() fonksiyonundan cikis yapiliyor...')
         self.serial_degistir()
         self.start_interface()
-
     def data_waiting(self):
         if self.backup != 'loop_end':
             self.dot = self.dot + '.'
@@ -348,7 +384,6 @@ class user_interface(Frame):
         self.requeset_data()
         if verbose:
             print('<<<user_interface.requeset_data_beginning() fonksiyonundan cikis yapiliyor...')
-
     def requeset_data(self):
         if verbose:
             print('>>>user_interface.requeset_data() fonksiyonuna giris yapiliyor...')
@@ -357,18 +392,30 @@ class user_interface(Frame):
             #try:
         if True:
             if True:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-
-                text ="databse_send_me"
-
+                veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+                text = str(True)  + "," + self.ip_adres
                 text = text.encode('utf-8')
-                s.send(text)
-                self.requeset_data_answer = s.recv(int(config['veri']["raspberry_buffer_size"]))
-                print(self.requeset_data_answer)
-                s.close()
-            #except:
-            #    hata = True
+                veri.send(text)
+                data = veri.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
+                veri.close()
+
+                mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                mysocket.bind((self.ip_adres, int(config['veri']['raspberry_port'])))
+                mysocket.listen(5)
+                (client, (ip,port)) = mysocket.accept()
+                client.send(b"knock knock knock, I'm the server")
+                data = client.recv(int(config['veri']['raspberry_buffer_size']))
+                alinan = data.decode()
+                mysocket.close()
+                print(alinan)
+            """except Exception as
+            error_name:
+                if verbose:
+                    print(error_name)
+                else:
+                    pass
+                hata = True"""
         self.serial_degistir()
         self.backup = None
         if verbose:

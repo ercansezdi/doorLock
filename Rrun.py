@@ -143,48 +143,93 @@ class raspi:
         self.gonderme_onay = True
         while self.gonderme_onay:
             try:
+
                 mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
                 mysocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
                 mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
                 mysocket.listen(5)
                 (client, (ip,port)) = mysocket.accept()
                 data = client.recv(int(config['veri']['raspberry_buffer_size']))
                 self.okunanVeri = data.decode()
+                client.send(b"knock knock knock, I'm the server")
+                mysocket.close()
 
-                if self.okunanVeri == "databse_send_me":
-                    degis = 'adda'
-                    client.send(degis)
-                    mysocket.close()
-                    #data = s.recv(1024) #alinan veri
+                sart = self.okunanVeri.split(",")
+
+                if sart[0] == "True":
+                    self.ip_address = sart[1]
                     self.okunanVeri = ","
+                    print("a")
+                    self.veri_yolla_bilgisayar()
+                    print('V')
+                else:
                     self.gonderme_onay = False
+                #data = s.recv(1024) #alinan veri
+
 
                     #client.send(b"""1mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))"""
 
             except Exception as error_name:
 
                 if verbose:
-                    print(error_name)
+                    print(2," ",error_name)
                 else:
                     pass
+    def veri_yolla_bilgisayar(self):
+        print('KKKKKKKKKKKKKKKKK')
+        self.data = sqlite3.connect(self.address + "database/register.db")
+        print('a')
+        self.veri = self.data.cursor()
+        print('b')
+        oku = self.veri.execute("select * from people").fetchall()
+        print('c')
+        bos = " "
+        print('d')
+        for i in oku:
+            for j in i:
+                bos= bos + "," + str(j)
+        print('e')
+        self.data.commit()
+        text = bos
+        print('1')
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print('2')
+        s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
+        print('3')
+        text = text.encode('utf-8')
+        print('4')
+        s.send(text)
+        print('5')
+        data = s.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
+        print('6')
+        s.close()
+        print('YYYYYYYYYYYYYYYYY')
+        self.gonderme_onay = False
+
+
+
+
+
+
+
 
     def loop(self):
         if verbose:
             print("Waiting data . . .")
-        continue_reading = True
-        while continue_reading:
+
+        while True:
+            if not(self.gonderme_onay):
+                averi  = Thread(target=self.commit_data)
+                averi.start()
             hata = True
             try:
-
-                if not(self.gonderme_onay):
-                    averi  = Thread(target=self.commit_data)
-                    averi.start()
-
                 self.okunanVeri = self.okunanVeri.split(",")
                 ad_soyad  = self.okunanVeri[0]
                 numara = self.okunanVeri[1]
                 uuid = self.okunanVeri[2]
-            except:
+            except Exception as error_name:
                 hata = False
             if hata: # yeni veri gelmis
                 if verbose:
@@ -227,7 +272,6 @@ class raspi:
                             pass
                         self.data = sqlite3.connect(self.address + "database/members.db")
                         self.veri = self.data.cursor()
-                        print(self.okunanKart)
                         buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(self.okunanKart) + "')").fetchone()[0]
                         if buKisiEklimi == 0:#bu kişi ekli değil ekle
                             izin = Thread(target=self.kilitle)
@@ -244,6 +288,7 @@ class raspi:
                             self.data = sqlite3.connect(self.address + "database/register.db")
                             self.veri = self.data.cursor()
                             self.veri.execute("INSERT INTO people (ad_soyad,numara,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,numara,giris_saat,cikis_saat))
+                            self.data.commit()
                             izin = Thread(target=self.kilit_ac)
                             rgb = Thread(target=self.greenOn                                                                                  )
 
