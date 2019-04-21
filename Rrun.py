@@ -1,13 +1,16 @@
+#!/usr/bin/env python
 import RPi.GPIO as GPIO
-from time import strftime
+from time import strftime,sleep,strptime
 import os
-from datetime import datetime
+from datetime import datetime,timedelta
 import sqlite3
 import configparser
 from threading import Thread
 import signal
-import MFRC522
 import socket
+from RC522 import RFID
+import sys
+
 
 global verbose
 global rfid_yes
@@ -15,7 +18,7 @@ global config
 
 
 config = configparser.ConfigParser()
-rfid_yes = False
+rfid_yes = True
 verbose = True
 class raspi:
     def __init__(self):
@@ -26,9 +29,13 @@ class raspi:
         self.yesil=31
         self.mavi =33
         self.gonderme_onay = False
+        self.yedek_kart = True
+        self.ara_zaman = -5
         if rfid_yes:
+            self.rdr = RFID()
+            self.util = self.rdr.util()
+            self.util.debug = True
             signal.signal(signal.SIGINT, self.end_read)
-            self.MIFAREReader = MFRC522.MFRC522()
     def redOn(self):
         GPIO.output(self.kirmizi,GPIO.LOW)
         GPIO.output(self.yesil  ,GPIO.HIGH)
@@ -113,9 +120,12 @@ class raspi:
         if verbose:
             print('>>>raspi.kilit_ac() fonksiyonuna giris yapiliyor...')
         GPIO.output(self.manyetik_kapi_port,GPIO.LOW)
-        zaman = (int(datatime.today().strftime('%S')) + int(config['veri']['kapi_ac_izin'])) % 60
-        while int(datatime.today().strftime('%S')) < zaman:
-            pass
+        kapanmaZamani = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
+        sure = timedelta(seconds = int(config['veri']['kapi_ac_izin']))
+        kapanmaZamani = kapanmaZamani + sure
+        guncelSure = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
+        while  guncelSure < kapanmaZamani:
+            guncelSure = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
         self.kilitle()
 
         if verbose:
@@ -126,26 +136,37 @@ class raspi:
         rest = dec /16
         return digits[int(rest)] + digits[int(x)]
     def end_read(self,signal,frame):
-        global continue_reading
-        continue_reading = False
-        GPIO.cleanup()
+        print("\nCtrl+C captured, ending read.")
+        self.rdr.cleanup()
+        sys.exit()
     def commit_data(self):
         self.gonderme_onay = True
         while self.gonderme_onay:
-            #try:
-            if True:
+            try:
                 mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                mysocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
                 mysocket.listen(5)
                 (client, (ip,port)) = mysocket.accept()
                 data = client.recv(int(config['veri']['raspberry_buffer_size']))
                 self.okunanVeri = data.decode()
-                self.gonderme_onay = False
-                mysocket.close()
 
-            #except:
-            #    if verbose:
-            #        print('Hata Veri bekleniyor')
+                if self.okunanVeri == "databse_send_me":
+                    degis = 'adda'
+                    client.send(degis)
+                    mysocket.close()
+                    #data = s.recv(1024) #alinan veri
+                    self.okunanVeri = ","
+                    self.gonderme_onay = False
+
+                    #client.send(b"""1mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))"""
+
+            except Exception as error_name:
+
+                if verbose:
+                    print(error_name)
+                else:
+                    pass
 
     def loop(self):
         if verbose:
@@ -166,6 +187,8 @@ class raspi:
             except:
                 hata = False
             if hata: # yeni veri gelmis
+                if verbose:
+                    print('>>> New People')
                 self.data = sqlite3.connect(self.address + "database/members.db")
                 self.veri = self.data.cursor()
                 buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(uuid) + "')").fetchone()[0]
@@ -178,24 +201,55 @@ class raspi:
             else: # yeni veri gelmemis kart okumayı kontrol et
                 pass
                 if rfid_yes:
-                    (status,TagType) = self.MIFAREReader.MFRC522_Request(self.MIFAREReader.PICC_REQIDL)
-                    (status,uid) = self.MIFAREReader.MFRC522_Anticoll()
-                    if status == self.MIFAREReader.MI_OK:
-                        okunanKart = self.toHex(uid[int(0)]) + " " +self.toHex(uid[int(1)])+ " " +self.toHex(uid[int(2)]) + " " +self.toHex(uid[int(3)])
-
+                    self.rdr.wait_for_tag()
+                    (error, data) = self.rdr.request()
+                    (error, uid) = self.rdr.anticoll()
+                    if not(error):
+                        self.okunanKart= str(self.toHex(int(uid[0]))) + " " +str(self.toHex(uid[1]))+ " " +str(self.toHex(uid[2])) + " " +str(self.toHex(uid[3]))
+                        sleep(0.1)
+                    else:
+                        self.okunanKart =False
                     ###
                     ##
                     #
-                    buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(okunanKart) + "')").fetchone()[0]
-                    if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                        izin = Thread(target=self.kilitle)
-                        rgb = Thread(target=self.redOn)
-                    else:
-                        izin = Thread(target=self.kilit_ac)
-                        rgb = Thread(target=self.greenOn                                                                                  )
+                    if self.okunanKart != False:
+                        self.data = sqlite3.connect(self.address + "database/register.db")
+                        self.veri = self.data.cursor()
+                        if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
+                            self.veri.execute("""CREATE TABLE {} (
+                            'ad_soyad'	TEXT,
+                            'numara'   TEXT,
+                            'giris_saat'   TEXT,
+                            'cikis_saat'   TEXT,
+                            PRIMARY KEY(numara));""".format('people'))
+                            self.data.commit()
+                        else:
+                            pass
+                        self.data = sqlite3.connect(self.address + "database/members.db")
+                        self.veri = self.data.cursor()
+                        print(self.okunanKart)
+                        buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(self.okunanKart) + "')").fetchone()[0]
+                        if buKisiEklimi == 0:#bu kişi ekli değil ekle
+                            izin = Thread(target=self.kilitle)
+                            rgb = Thread(target=self.redOn)
+                        else:
+                            alinan = self.veri.execute("select * from people").fetchall()
+                            for i in alinan:
+                                if bool(i[2] == self.okunanKart):
+                                    ad_soyad = i[0]
+                                    numara = i[1]
+                                    giris_saat = datetime.today().strftime("%d/%m/%y %H:%M:%S")
+                                    cikis_saat = None
+                                    break
+                            self.data = sqlite3.connect(self.address + "database/register.db")
+                            self.veri = self.data.cursor()
+                            self.veri.execute("INSERT INTO people (ad_soyad,numara,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,numara,giris_saat,cikis_saat))
+                            izin = Thread(target=self.kilit_ac)
+                            rgb = Thread(target=self.greenOn                                                                                  )
 
-                    izin.start()
-                    rgb.start()
+                        izin.start()
+                        rgb.start()
+                        sleep(int(config['veri']['lamba_suresi']))
 
 
 if __name__ == "__main__":

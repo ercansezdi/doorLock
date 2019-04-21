@@ -6,6 +6,9 @@ import socket
 from threading import Thread
 from time import sleep
 import configparser
+from datetime import datetime
+from time import strftime
+import serial
 ################ globals #####################
 global verbose
 global config
@@ -72,7 +75,9 @@ class user_interface(Frame):
     def __init__(self,parent):
         Frame.__init__(self,parent)
         self.parent = parent
-
+        self.menu = Menu(self.parent)
+        self.parent.config(menu=self.menu)
+        self.parent.config(bg='#2A2C2B', menu=self.menu)
         self.frame_one = Frame(self.parent)
         self.frame_one.grid(row=0,column=0)
         self.frame_one.grid_remove()
@@ -86,7 +91,7 @@ class user_interface(Frame):
         self.frame_three.grid_remove()
 
         #self.parent.attributes("-fullscreen", True)
-        self.parent.geometry('380x200')
+        self.parent.geometry('390x200')
         self.parent.bind('<Escape>',quit)
         self.parent.title('Kuluçka Merkezi doorLock')
 
@@ -105,10 +110,13 @@ class user_interface(Frame):
         ################# variables ###################
         self.variable1 = StringVar()
         self.variable2 = StringVar()
-        self.backup = None
+        self.variable3 = StringVar()
+        self.backup = "loop_end"
         self.variable = StringVar()
         self.address = os.getcwd()
         self.dot = "."
+        self.message = ""
+        self.serial_durdur = None
 
         if str(os.name) == 'posix': #Linux
             self.address = self.address.split('/')
@@ -170,10 +178,58 @@ class user_interface(Frame):
         self.studentNumber = Entry(self.frame_text_3,font ="Helvetica 12 bold italic")
         self.studentNumber.grid(row=2,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
 
+        #################################### Menu #####################################33
+        #self.exit.add_command(label="Exit", command=self.parent.destroy)
+        self.menu.add_cascade(label="Giriş - Çıkış Kayıtları", command=self.requeset_data_beginning)
+        self.menu.add_cascade(label=" | ")
+        self.menu.add_cascade(label="Yeni Kişi Ekleme", command=self.start_interface)
+        self.menu.add_cascade(label=" | ")
+        self.menu.add_cascade(label= "Kart Okuma Aktif", command=self.serial_degistir)
 
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapiliyor...')
+    def serial_degistir(self):
+        a = "Kart Okuma Aktif"
+        b = "Kart Okuma Kapalı"
+        if self.serial_durdur ==  "loop_end":
+            self.serial_durdur = None
+            self.menu.delete(b)
+            self.menu.add_cascade(label=a, command=self.serial_degistir)
+        else:
+            self.serial_durdur =  "loop_end"
+            self.menu.delete(a)
+            self.menu.add_cascade(label=b, command=self.serial_degistir)
+    def read_serial(self):
+        if self.serial_durdur != "loop_end":
+            port_counter = 0
+            hata = True
+            port_x = "COM"
+            while hata:
+                try:
+                    port = port_x + str(port_counter)
+                    ard = serial.Serial(port ,9600,timeout=2)
+                    hata = False
+                except:
+                    port_counter = port_counter + 1
+
+            # Serial read section
+            msg = ard.readline()
+            if str(msg) != "b''":
+                self.message = ""
+                for i in str(msg):
+                    if i != "'" and i != 'b':
+                        self.message = self.message + i
+
+                self.message = str(self.message).split(" ")
+                self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
+                if verbose:
+                    print("Read card : ",self.message)
+            else:
+                self.message = ""
+        root.after(300,run.read_serial)
     def send_data(self):
+        if verbose:
+            print('>>>user_interface.send_data() fonksiyonuna giris yapiliyor...')
         if self.name.get() == "" or self.name.get() == " " or self.name.get() == " " or self.name.get() == "   ":
             self.name.insert(0, '')
             self.name.insert(0, 'Boş Birakilamaz.')
@@ -185,6 +241,7 @@ class user_interface(Frame):
         if self.name.get() != "" and self.name.get() != "Boş Birakilamaz." and self.name.get() != " " and self.name.get() != " " and self.name.get() != "   ":
             if self.surname.get() != "" and self.surname.get() != "Boş Birakilamaz." and self.surname.get() != " " and self.surname.get() != "  " and self.surname.get() != "   ":
                 if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Birakilamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
+                    self.backup = "loop_end"
                     if verbose:
                         print("""
                         Gönderilecek Veriler:
@@ -192,14 +249,15 @@ class user_interface(Frame):
                         Surname       : {}
                         Numarasi      : {}
                         Kart Numarasi : {}
-                        """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.uuid))
-                    self.send_data_ = str(self.name.get()) + " " + str(self.surname.get()) + "," + str(self.studentNumber.get()) + "," + str(self.uuid)
+                        """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.message))
+                    self.send_data_ = str(self.name.get()) + " " + str(self.surname.get()) + "," + str(self.studentNumber.get()) + "," + str(self.message)
 
                     self.name.delete(0, "end")
                     self.surname.delete(0, "end")
                     self.studentNumber.delete(0, "end")
-                    root.after(1000,run.data_waiting)
-                    restart_data = Thread(target=self.start_interface)
+                    if verbose:
+                        print('<<<user_interface.send_data() fonksiyonundan cikis yapiliyor...')
+
                     restart_data = Thread(target=self.waiting)
                     send = Thread(target=self.send_raspberry)
                     restart_data.start()
@@ -213,97 +271,113 @@ class user_interface(Frame):
         else:
             pass
 
-
     def waiting(self):
         self.frame_two.grid_remove()
         self.frame_three.grid(row = 0, column = 0)
-    def ending(self):
-        root.after(1000,run.data_waiting)
-        self.start_interface()
     def send_raspberry(self):
+        if verbose:
+            print('>>>user_interface.send_raspberry() fonksiyonuna giris yapiliyor...')
         self.hata = False
         while not(self.hata):
             self.dot = self.dot + '.'
             if self.dot == '....':
                 self.dot = ""
             self.variable2.set("Bilgiler Gönderiliyor" + self.dot)
-            try:
+            #try:
+            if True:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+                print(self.send_data_)
                 self.send_data_ = self.send_data_.encode('utf-8')
                 veri.send(self.send_data_)
                 #data = s.recv(1024) #alinan veri
                 veri.close()
                 self.hata = True
-            except:
-                self.hata = False
-            sleep(0.5)
-        self.ending()
-            try:
-                veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-                self.send_data_ = self.send_data_.encode('utf-8')
-                veri.send(self.send_data_)
-                #data = s.recv(1024) #alinan veri
-                veri.close()
-                self.hata = True
-            except:
-                sleep(0.5)
-                self.hata = False
+            #except:
+            #    self.hata = False
+        self.backup = None
+        if verbose:
+            print('<<<user_interface.send_raspberry() fonksiyonundan cikis yapiliyor...')
+        self.serial_degistir()
+        self.start_interface()
+
     def data_waiting(self):
-        self.uuid = None
-        self.dot = self.dot + '.'
-        if self.dot == '....':
-            self.dot = ""
-        self.variable1.set("Kart Bilgisi Bekleniyor" + self.dot)
-        try:
-            if str(os.name) == 'posix': #Linux
-                self.read_data = open(self.address  + "/data/read_uuid.txt",'r')
-            if str(os.name) == 'nt': #windwos
-                self.read_data = open(self.address + "\\data\\read_uuid.txt",'r')
-            self.uuid = self.read_data.read()
-            self.read_data.close()
-            if str(os.name) == 'posix': #Linux
-                os.remove(self.address  + "/data/read_uuid.txt")
-            if str(os.name) == 'nt': #Windows
-                os.remove(self.address  + "\\data\\read_uuid.txt")
-        except:
-            if verbose:
-                print('Veri Bekleniyor..')
-
-        if self.backup != self.uuid and self.uuid != "" and self.uuid != None:
-            self.backup = self.uuid
-            self.read_data_interface()
+        if self.backup != 'loop_end':
+            self.dot = self.dot + '.'
+            if self.dot == '....':
+                self.dot = ""
+            if self.message == "":
+                text = "Kart Bilgisi Bekleniyor" + self.dot
+                if text == "Kart Bilgisi Bekleniyor...":
+                    text = "Kart Bilgisi Bekleniyor"
+                self.variable1.set(text)
+            else:
+                self.backup = "loop_end"
+                self.serial_degistir()
+                self.read_data_interface()
         else:
-            root.after(1000,run.data_waiting)
-
+            pass
+        root.after(1000,run.data_waiting)
     def read_data_interface(self):
         if verbose:
             print('>>>user_interface.read_data_interface() fonksiyonuna giris yapiliyor...')
             self.frame_one.grid_remove()
+            self.frame_two.grid_remove()
             self.frame_two.grid(row = 0 ,column = 0)
             self.frame_three.grid_remove()
-
-
 
         if verbose:
             print('<<<user_interface.read_data_interface() fonksiyonundan cikis yapiliyor...')
     def start_interface(self):
         if verbose:
             print('>>>user_interface.start_interface() fonksiyonuna giris yapiliyor...')
+            self.frame_one.grid_remove()
             self.frame_one.grid(row = 0 ,column =0)
             self.frame_two.grid_remove()
             self.frame_three.grid_remove()
-
-
-
+            self.backup = None
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
             print('<<<user_interface.start_interface() fonksiyonundan cikis yapiliyor...')
+    def requeset_data_beginning(self):
+        if verbose:
+            print('>>>user_interface.requeset_data_beginning() fonksiyonuna giris yapiliyor...')
+        self.backup = 'loop_end'
+        self.serial_degistir()
+        #burada popup açılacak
+        self.requeset_data()
+        if verbose:
+            print('<<<user_interface.requeset_data_beginning() fonksiyonundan cikis yapiliyor...')
+
+    def requeset_data(self):
+        if verbose:
+            print('>>>user_interface.requeset_data() fonksiyonuna giris yapiliyor...')
+        hata = True
+        #while hata:
+            #try:
+        if True:
+            if True:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+
+                text ="databse_send_me"
+
+                text = text.encode('utf-8')
+                s.send(text)
+                self.requeset_data_answer = s.recv(int(config['veri']["raspberry_buffer_size"]))
+                print(self.requeset_data_answer)
+                s.close()
+            #except:
+            #    hata = True
+        self.serial_degistir()
+        self.backup = None
+        if verbose:
+            print('<<<user_interface.requeset_data() fonksiyonundan cikis yapiliyor...')
 if __name__ == "__main__":
     connect = configure_class()
     root = Tk()
     root.call('tk', 'scaling', 1.0)
     run = user_interface(root)
     root.after(1000,run.data_waiting)
+    root.after(1000,run.read_serial)
     root.mainloop()
