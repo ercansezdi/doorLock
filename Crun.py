@@ -9,12 +9,13 @@ import configparser
 from datetime import datetime
 from time import strftime
 import serial
+import tkinter.ttk
 ################ globals #####################
 global verbose
 global config
 
 
-verbose = True
+verbose = False
 config = configparser.ConfigParser()
 
 ############### classes ######################
@@ -131,8 +132,29 @@ class user_interface(Frame):
             config.read(self.address + "\\conf\\configuration.cfg")
         ################ functions ####################
         self.ip_adres_ogren()
+        self.serial_ogren()
         self.configure_interface()
         self.start_interface()
+    def serial_ogren(self):
+
+        port_counter = 0
+        hata = True
+        port_x = "COM"
+        while hata:
+            try:
+                port = port_x + str(port_counter)
+                ard = serial.Serial(port ,9600,timeout=2)
+                hata = False
+                self.serial_port = port
+            except Exception as error_name:
+                if verbose:
+                    print(error_name)
+                else:
+                    pass
+                port_counter = port_counter + 1
+
+        # Serial read section
+
     def ip_adres_ogren(self):
         try:
             ip = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -213,52 +235,20 @@ class user_interface(Frame):
             self.menu.add_cascade(label=b, command=self.serial_degistir)
     def read_serial(self):
         if self.serial_durdur != "loop_end":
-            if self.serial_port == 'X':
-                port_counter = 0
-                hata = True
-                port_x = "COM"
-                while hata:
-                    try:
-                        port = port_x + str(port_counter)
-                        ard = serial.Serial(port ,9600,timeout=2)
-                        hata = False
-                        self.serial_port = port
-                    except Exception as error_name:
-                        if verbose:
-                            print(error_name)
-                        else:
-                            pass
-                        port_counter = port_counter + 1
+            ard = serial.Serial(self.serial_port ,9600,timeout=2)
+            msg = ard.readline()
+            if str(msg) != "b''":
+                self.message = ""
+                for i in str(msg):
+                    if i != "'" and i != 'b':
+                        self.message = self.message + i
 
-                # Serial read section
-                msg = ard.readline()
-                if str(msg) != "b''":
-                    self.message = ""
-                    for i in str(msg):
-                        if i != "'" and i != 'b':
-                            self.message = self.message + i
-
-                    self.message = str(self.message).split(" ")
-                    self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
-                    if verbose:
-                        print("Read card : ",self.message)
-                else:
-                    self.message = ""
+                self.message = str(self.message).split(" ")
+                self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
+                if verbose:
+                    print("Read card : ",self.message)
             else:
-                ard = serial.Serial(self.serial_port ,9600,timeout=2)
-                msg = ard.readline()
-                if str(msg) != "b''":
-                    self.message = ""
-                    for i in str(msg):
-                        if i != "'" and i != 'b':
-                            self.message = self.message + i
-
-                    self.message = str(self.message).split(" ")
-                    self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
-                    if verbose:
-                        print("Read card : ",self.message)
-                else:
-                    self.message = ""
+                self.message = ""
 
         root.after(300,run.read_serial)
     def send_data(self):
@@ -316,8 +306,7 @@ class user_interface(Frame):
             if self.dot == '....':
                 self.dot = ""
             self.variable2.set("Bilgiler Gönderiliyor" + self.dot)
-            #try:
-            if True:
+            try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
                 self.send_data_ = self.send_data_.encode('utf-8')
@@ -325,13 +314,13 @@ class user_interface(Frame):
                 #data = s.recv(1024) #alinan veri
                 veri.close()
                 self.hata = True
-            """
             except Exception as error_name:
+                self.hata = False
                 if verbose:
                     print(error_name)
                 else:
                     pass
-                self.hata = False"""
+
         self.backup = None
         if verbose:
             print('<<<user_interface.send_raspberry() fonksiyonundan cikis yapiliyor...')
@@ -357,21 +346,21 @@ class user_interface(Frame):
     def read_data_interface(self):
         if verbose:
             print('>>>user_interface.read_data_interface() fonksiyonuna giris yapiliyor...')
-            self.frame_one.grid_remove()
-            self.frame_two.grid_remove()
-            self.frame_two.grid(row = 0 ,column = 0)
-            self.frame_three.grid_remove()
+        self.frame_one.grid_remove()
+        self.frame_two.grid_remove()
+        self.frame_two.grid(row = 0 ,column = 0)
+        self.frame_three.grid_remove()
 
         if verbose:
             print('<<<user_interface.read_data_interface() fonksiyonundan cikis yapiliyor...')
     def start_interface(self):
         if verbose:
             print('>>>user_interface.start_interface() fonksiyonuna giris yapiliyor...')
-            self.frame_one.grid_remove()
-            self.frame_one.grid(row = 0 ,column =0)
-            self.frame_two.grid_remove()
-            self.frame_three.grid_remove()
-            self.backup = None
+        self.frame_one.grid_remove()
+        self.frame_one.grid(row = 0 ,column =0)
+        self.frame_two.grid_remove()
+        self.frame_three.grid_remove()
+        self.backup = None
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
             print('<<<user_interface.start_interface() fonksiyonundan cikis yapiliyor...')
@@ -388,10 +377,8 @@ class user_interface(Frame):
         if verbose:
             print('>>>user_interface.requeset_data() fonksiyonuna giris yapiliyor...')
         hata = True
-        #while hata:
-            #try:
-        if True:
-            if True:
+        while hata:
+            try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
                 text = str(True)  + "," + self.ip_adres
@@ -408,18 +395,75 @@ class user_interface(Frame):
                 data = client.recv(int(config['veri']['raspberry_buffer_size']))
                 alinan = data.decode()
                 mysocket.close()
-                print(alinan)
-            """except Exception as
-            error_name:
+                self.alinan_veri = alinan
+                hata = False
+            except Exception as error_name:
                 if verbose:
                     print(error_name)
                 else:
                     pass
-                hata = True"""
+                hata = True
+        self.veriler_goster()
         self.serial_degistir()
         self.backup = None
         if verbose:
             print('<<<user_interface.requeset_data() fonksiyonundan cikis yapiliyor...')
+    def veriler_goster(self):
+        self.popup = Toplevel()
+        self.popup.geometry('586x420')
+        self.popup.configure(background=self.bg, borderwidth=0)
+        #self.popup.attributes("-fullscreen", True)
+
+        self.grid(sticky=(N, S, W, E))
+        self.popup.grid_rowconfigure(0, weight=0)
+        self.popup.grid_columnconfigure(0, weight=0)
+        self.tree = tkinter.ttk.Treeview(self.popup, height=20)#,rowheight=50)
+
+        self.tree.place(x=40, y=95)
+        # self.tree.configure(bg = self.bg)
+        vsb = tkinter.ttk.Scrollbar(self.popup, orient="vertical", command=self.tree.yview)
+        vsb.place(x = 563, y=0, height=425)
+        self.tree.configure(yscrollcommand=vsb.set)
+
+        self.tree['columns'] = ('starttime', 'endtime', 'status','status_1')
+        # -------------------------------------------------------
+        self.tree.heading("#0", text='Giriş Sırası', anchor='center')
+        self.tree.column("#0", anchor="center", width=50, minwidth=35)  # W,N,S,
+        # -------------------------------------------------------
+        self.tree.heading('starttime', text='Numarası', anchor='center')
+        self.tree.column('starttime', anchor='center', width=100, minwidth=130)
+        # -------------------------------------------------------
+        self.tree.heading('endtime', text='Adı - Soyadı', anchor='center')
+        self.tree.column('endtime', anchor='center', width=150, minwidth=125)
+        # -------------------------------------------------------
+        self.tree.heading('status', text='Giriş Saati', anchor='center')
+        self.tree.column('status', anchor='center', width=130, minwidth=0)
+        # -------------------------------------------------------
+        self.tree.heading('status_1', text='Çıkış Saati', anchor='center')
+        self.tree.column('status_1', anchor='center', width=130, minwidth=0)
+        # -------------------------------------------------------
+        self.tree.grid(sticky=(N, S, W, E), row=0, column=0, padx=0, pady=0, columnspan=12, rowspan=4)
+
+        self.canvas = Canvas(self.tree, relief=SUNKEN, borderwidth=2)  # ,
+        # scrollregion=('-11c', '-11c', '50c', '20c'))
+        self.vscroll = Scrollbar(self.tree, command=self.canvas.yview)
+
+        self.canvas.configure(yscrollcommand=self.vscroll.set)
+
+        tkinter.ttk.Style().configure("Treeview", background=self.bg, fieldbackground=self.bg,
+                                      font=(None, 12), foreground=self.fg)
+
+        self.tree.grid_rowconfigure(0, weight=1)
+        self.tree.grid_columnconfigure(0, weight=1)
+        self.alinan_veri = self.alinan_veri.split(",")
+        sayac = 0
+        sira = 1
+        for i in range(0,(len(self.alinan_veri) -1 )//4):
+            self.tree.insert('', 'end', text= sira, values=(self.alinan_veri[2+sayac],self.alinan_veri[1+sayac],self.alinan_veri[3+sayac],self.alinan_veri[4+sayac]))
+            sira = sira +1
+            sayac = sayac + 4
+        self.alinan_veri = ","
+
 if __name__ == "__main__":
     connect = configure_class()
     root = Tk()

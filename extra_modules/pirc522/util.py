@@ -31,8 +31,6 @@ class RFIDUtil(object):
         Calls RFID select_tag().
         Returns called select_tag() error state.
         """
-        if self.debug:
-            print("Selecting UID " + str(uid))
 
         if self.uid != None:
             self.deauth()
@@ -47,8 +45,6 @@ class RFIDUtil(object):
         self.method = auth_method
         self.key = key
 
-        if self.debug:
-            print("Changing used auth key to " + str(key) + " using method " + ("A" if auth_method == self.rfid.auth_a else "B"))
 
     def deauth(self):
         """
@@ -58,13 +54,9 @@ class RFIDUtil(object):
         self.key = None
         self.last_auth = None
 
-        if self.debug:
-            print("Changing auth key and method to None")
 
         if self.rfid.authed:
             self.rfid.stop_crypto()
-            if self.debug:
-                print("Stopping crypto1")
 
     def is_tag_set_auth(self):
         return (self.uid != None) and (self.key != None) and (self.method != None)
@@ -76,17 +68,12 @@ class RFIDUtil(object):
         """
         auth_data = (block_address, self.method, self.key, self.uid)
         if (self.last_auth != auth_data) or force:
-            if self.debug:
-                print("Calling card_auth on UID " + str(self.uid))
-
             self.last_auth = auth_data
             return self.rfid.card_auth(self.method, block_address, self.key, self.uid)
         else:
-            if self.debug:
-                print("Not calling card_auth - already authed")
             return False
 
-    def write_trailer(self, sector, key_a=(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), auth_bits=(0xFF, 0x07, 0x80), 
+    def write_trailer(self, sector, key_a=(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF), auth_bits=(0xFF, 0x07, 0x80),
                       user_data=0x69, key_b=(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)):
         """
         Writes sector trailer of specified sector. Tag and auth must be set - does auth.
@@ -110,15 +97,9 @@ class RFIDUtil(object):
             if not error:
                 for i in range(len(new_bytes)):
                     if new_bytes[i] != None:
-                        if self.debug:
-                            print("Changing pos " + str(i) + " with current value " + str(data[i]) + " to " + str(new_bytes[i]))
-
                         data[i] = new_bytes[i]
 
                 error = self.rfid.write(block_address, data)
-                if self.debug:
-                    print("Writing " + str(data) + " to " + self.sector_string(block_address))
-
         return error
 
     def read_out(self, block_address):
@@ -131,10 +112,8 @@ class RFIDUtil(object):
         error = self.do_auth(block_address)
         if not error:
             (error, data) = self.rfid.read(block_address)
-            print(self.sector_string(block_address) + ": " + str(data))
         else:
-            print("Error on " + self.sector_string(block_address))
-
+            pass
     def get_access_bits(self, c1, c2, c3):
         """
         Calculates the access bits for a sector trailer based on their access conditions

@@ -28,14 +28,12 @@ class raspi:
         self.kirmizi=29
         self.yesil=31
         self.mavi =33
-        self.gonderme_onay = False
         self.yedek_kart = True
         self.ara_zaman = -5
-        if rfid_yes:
-            self.rdr = RFID()
-            self.util = self.rdr.util()
-            self.util.debug = True
-            signal.signal(signal.SIGINT, self.end_read)
+        self.rdr = RFID()
+        self.util = self.rdr.util()
+        self.util.debug = True
+        signal.signal(signal.SIGINT, self.end_read)
     def redOn(self):
         GPIO.output(self.kirmizi,GPIO.LOW)
         GPIO.output(self.yesil  ,GPIO.HIGH)
@@ -72,8 +70,7 @@ class raspi:
         if not(os.path.exists(self.address + 'database/')):
             os.mkdir(self.address  + 'database/')
         if not(os.path.exists(self.address + 'data/')):
-            os.mkdir(self.address + 'data/')
-
+            os.mkdir(self.address  + 'data/')
         if verbose:
             print('<<<raspi.klasor_olustur() fonksiyonundan cikis yapiliyor...')
         self.database_tanimla()
@@ -106,10 +103,10 @@ class raspi:
         if verbose:
             print('<<<raspi.pin_tanimla() fonksiyonundan cikis yapiliyor...')
         GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
-        commit = Thread(target=self.commit_data)
-        basla = Thread(target=self.loop)
-        commit.start()
-        basla.start()
+        #commit = Thread(target=self.commit_data)
+        #basla = Thread(target=self.loop)
+        #commit.start()
+        #basla.start()
     def kilitle(self):
         if verbose:
             print('>>>raspi.kilitle() fonksiyonuna giris yapiliyor...')
@@ -140,164 +137,137 @@ class raspi:
         self.rdr.cleanup()
         sys.exit()
     def commit_data(self):
-        self.gonderme_onay = True
-        while self.gonderme_onay:
-            try:
+        try:
+            mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            print(1)
+            mysocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            print(2)
+            mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+            print(3)
+            mysocket.listen(5)
+            print(4)
+            (client, (ip,port)) = mysocket.accept()
+            print(5)
+            data = client.recv(int(config['veri']['raspberry_buffer_size']))
+            print(6)
+            self.okunanVeri = data.decode()
+            print(7)
+            client.send(b"knock knock knock, I'm the server")
+            print(8)
+            mysocket.close()
+            print(9)
+            sart = self.okunanVeri.split(",")
 
-                mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if sart[0] == "True":
+                self.ip_address = sart[1]
+                self.okunanVeri = False
+                self.veri_yolla_bilgisayar()
+            else:
+                if self.okunanVeri != ",":
+                    parcala = self.okunanVeri.split(",")
+                    self.data = sqlite3.connect(self.address + "database/members.db")
+                    self.veri = self.data.cursor()
+                    buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(parcala[2]) + "')").fetchone()[0]
+                    if buKisiEklimi == 0:#bu kişi ekli değil ekle
+                        self.veri.execute("INSERT INTO people (ad_soyad,numara,kart_id) VALUES (?,?,?)",(parcala[0],parcala[1],parcala[2]))
+                        self.data.commit()
+                        self.data.close()
+                        if verbose:
+                            print("new users added" )
+                    else:
+                        pass
+        except Exception as error_name:
+            mysocket.close()
+            if verbose:
+                print(2," ",error_name)
 
-                mysocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-                mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-                mysocket.listen(5)
-                (client, (ip,port)) = mysocket.accept()
-                data = client.recv(int(config['veri']['raspberry_buffer_size']))
-                self.okunanVeri = data.decode()
-                client.send(b"knock knock knock, I'm the server")
-                mysocket.close()
-
-                sart = self.okunanVeri.split(",")
-
-                if sart[0] == "True":
-                    self.ip_address = sart[1]
-                    self.okunanVeri = ","
-                    print("a")
-                    self.veri_yolla_bilgisayar()
-                    print('V')
-                else:
-                    self.gonderme_onay = False
-                #data = s.recv(1024) #alinan veri
-
-
-                    #client.send(b"""1mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))"""
-
-            except Exception as error_name:
-
-                if verbose:
-                    print(2," ",error_name)
-                else:
-                    pass
+            else:
+                pass
+            sleep(5)
     def veri_yolla_bilgisayar(self):
-        print('KKKKKKKKKKKKKKKKK')
+        self.okunanVeri = ","
         self.data = sqlite3.connect(self.address + "database/register.db")
-        print('a')
         self.veri = self.data.cursor()
-        print('b')
         oku = self.veri.execute("select * from people").fetchall()
-        print('c')
         bos = " "
-        print('d')
         for i in oku:
             for j in i:
                 bos= bos + "," + str(j)
-        print('e')
         self.data.commit()
         text = bos
-        print('1')
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print('2')
         s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
-        print('3')
         text = text.encode('utf-8')
-        print('4')
         s.send(text)
-        print('5')
         data = s.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
-        print('6')
         s.close()
-        print('YYYYYYYYYYYYYYYYY')
-        self.gonderme_onay = False
-
-
-
-
-
-
-
 
     def loop(self):
         if verbose:
             print("Waiting data . . .")
-
         while True:
-            if not(self.gonderme_onay):
-                averi  = Thread(target=self.commit_data)
-                averi.start()
-            hata = True
-            try:
-                self.okunanVeri = self.okunanVeri.split(",")
-                ad_soyad  = self.okunanVeri[0]
-                numara = self.okunanVeri[1]
-                uuid = self.okunanVeri[2]
-            except Exception as error_name:
-                hata = False
-            if hata: # yeni veri gelmis
-                if verbose:
-                    print('>>> New People')
-                self.data = sqlite3.connect(self.address + "database/members.db")
+            #self.rdr.wait_for_tag()
+            (error, data) = self.rdr.request()
+            (error, uid) = self.rdr.anticoll()
+            if int(datetime.today().strftime('%S')) % 10 == 0:
+                izin = Thread(target=self.commit_data)
+                izin.start()
+                sleep(1)
+            if not(error):
+                self.okunanKart= str(self.toHex(int(uid[0]))) + " " +str(self.toHex(uid[1]))+ " " +str(self.toHex(uid[2])) + " " +str(self.toHex(uid[3]))
+                sleep(0.1)
+            else:
+                self.okunanKart =False
+            if self.okunanKart != False:
+                self.data = sqlite3.connect(self.address + "database/register.db")
                 self.veri = self.data.cursor()
-                buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(uuid) + "')").fetchone()[0]
-
-                if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                    self.veri.execute("INSERT INTO people (ad_soyad,numara,kart_id) VALUES (?,?,?)",(ad_soyad,numara,uuid))
+                if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
+                    self.veri.execute("""CREATE TABLE {} (
+                    'ad_soyad'	TEXT,
+                    'numara'   TEXT,
+                    'giris_saat'   TEXT,
+                    'cikis_saat'   TEXT
+                    );""".format('people'))
                     self.data.commit()
                 else:
                     pass
-            else: # yeni veri gelmemis kart okumayı kontrol et
-                pass
-                if rfid_yes:
-                    self.rdr.wait_for_tag()
-                    (error, data) = self.rdr.request()
-                    (error, uid) = self.rdr.anticoll()
-                    if not(error):
-                        self.okunanKart= str(self.toHex(int(uid[0]))) + " " +str(self.toHex(uid[1]))+ " " +str(self.toHex(uid[2])) + " " +str(self.toHex(uid[3]))
-                        sleep(0.1)
-                    else:
-                        self.okunanKart =False
-                    ###
-                    ##
-                    #
-                    if self.okunanKart != False:
-                        self.data = sqlite3.connect(self.address + "database/register.db")
-                        self.veri = self.data.cursor()
-                        if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
-                            self.veri.execute("""CREATE TABLE {} (
-                            'ad_soyad'	TEXT,
-                            'numara'   TEXT,
-                            'giris_saat'   TEXT,
-                            'cikis_saat'   TEXT,
-                            PRIMARY KEY(numara));""".format('people'))
-                            self.data.commit()
-                        else:
-                            pass
-                        self.data = sqlite3.connect(self.address + "database/members.db")
-                        self.veri = self.data.cursor()
-                        buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(self.okunanKart) + "')").fetchone()[0]
-                        if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                            izin = Thread(target=self.kilitle)
-                            rgb = Thread(target=self.redOn)
-                        else:
-                            alinan = self.veri.execute("select * from people").fetchall()
-                            for i in alinan:
-                                if bool(i[2] == self.okunanKart):
-                                    ad_soyad = i[0]
-                                    numara = i[1]
-                                    giris_saat = datetime.today().strftime("%d/%m/%y %H:%M:%S")
-                                    cikis_saat = None
-                                    break
-                            self.data = sqlite3.connect(self.address + "database/register.db")
-                            self.veri = self.data.cursor()
-                            self.veri.execute("INSERT INTO people (ad_soyad,numara,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,numara,giris_saat,cikis_saat))
-                            self.data.commit()
-                            izin = Thread(target=self.kilit_ac)
-                            rgb = Thread(target=self.greenOn                                                                                  )
+                self.data = sqlite3.connect(self.address + "database/members.db")
+                self.veri = self.data.cursor()
+                buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(self.okunanKart) + "')").fetchone()[0]
+                self.data.commit()
 
-                        izin.start()
-                        rgb.start()
-                        sleep(int(config['veri']['lamba_suresi']))
+                if buKisiEklimi == 0:#bu kişi ekli değil ekle
+                    print(  "kilitle")
+                    izin = Thread(target=self.kilitle)
+                    rgb = Thread(target=self.redOn)
+                else:
+                    print("kilit ac")
+                    alinan = self.veri.execute("select * from people").fetchall()
+                    self.data.close()
+                    for i in alinan:
+                        if bool(i[2] == self.okunanKart):
+                            ad_soyad = i[0]
+                            numara = i[1]
+                            giris_saat = datetime.today().strftime("%d/%m/%y %H:%M:%S")
+                            cikis_saat = None
+                            break
+                    self.data = sqlite3.connect(self.address + "database/register.db")
+                    self.veri = self.data.cursor()
+                    self.veri.execute("INSERT INTO people (ad_soyad,numara,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,numara,giris_saat,cikis_saat))
+                    self.data.commit()
+                    self.data.close()
+                    izin = Thread(target=self.kilit_ac)
+                    rgb = Thread(target=self.greenOn
+                                                                                        )
+
+                izin.start()
+                rgb.start()
+                sleep(int(config['veri']['lamba_suresi']))
+
 
 
 if __name__ == "__main__":
 
     giris = raspi()
     giris.pin_tanimla()
+    giris.loop()
