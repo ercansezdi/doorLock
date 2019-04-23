@@ -15,7 +15,7 @@ global verbose
 global config
 
 
-verbose = False
+verbose = True
 config = configparser.ConfigParser()
 
 ############### classes ######################
@@ -53,25 +53,6 @@ class configure_class:
         if verbose:
             print('<<<door_lock.create_folder() fonksiyonundan cikis yapiliyor...')
 
-
-
-    def create_database(self):
-        if verbose:
-            print('>>>door_lock.create_database() fonksiyonuna giris yapiliyor...')
-        data = sqlite3.connect("database/members.db").cursor()
-        if data.execute("SELECT name FROM sqlite_master").fetchone() == None:
-            data.execute("""CREATE TABLE {} (
-            'ad_soyad'	TEXT,
-            'kart_id'  TEXT,
-            PRIMARY KEY(kart_id));""".format('data'))
-            data.commit()
-        else:
-            pass
-
-
-
-        if verbose:
-            print('<<<door_lock.create_folder() fonksiyonundan cikis yapiliyor...')
 class user_interface(Frame):
     def __init__(self,parent):
         Frame.__init__(self,parent)
@@ -104,10 +85,6 @@ class user_interface(Frame):
         self.frame_one.configure(background=self.bg )
         self.frame_two.configure(background=self.bg )
         self.frame_three.configure(background=self.bg )
-
-
-
-
         ################# variables ###################
         self.variable1 = StringVar()
         self.variable2 = StringVar()
@@ -116,9 +93,10 @@ class user_interface(Frame):
         self.backup = "loop_end"
         self.variable = StringVar()
         self.address = os.getcwd()
+        self.hata = True
         self.dot = "."
         self.message = ""
-        self.serial_durdur = None
+        self.serial_durdur = "loop_end"
 
         if str(os.name) == 'posix': #Linux
             self.address = self.address.split('/')
@@ -131,18 +109,22 @@ class user_interface(Frame):
             self.address = self.address + '\\doorLock'
             config.read(self.address + "\\conf\\configuration.cfg")
         ################ functions ####################
-        self.ip_adres_ogren()
-        self.serial_ogren()
         self.configure_interface()
         self.start_interface()
+        self.ip_adres_ogren()
+        if self.hata:
+            self.serial_ogren()
+        if self.hata:
+            self.raspbery_durum_ogren()
     def serial_ogren(self):
-
-        port_counter = 0
+        if verbose:
+            print('>>>user_interface.serial_ogren() fonksiyonuna giris yapiliyor...')
+        self.port_counter = 0
         hata = True
         port_x = "COM"
         while hata:
             try:
-                port = port_x + str(port_counter)
+                port = port_x + str(self.port_counter)
                 ard = serial.Serial(port ,9600,timeout=2)
                 hata = False
                 self.serial_port = port
@@ -151,21 +133,49 @@ class user_interface(Frame):
                     print(error_name)
                 else:
                     pass
-                port_counter = port_counter + 1
+                self.port_counter = self.port_counter + 1
+                if self.port_counter == 11:
+                    self.hata = False
+                    self.variable1.set("Ardiuno bağlanmamış.")
+                    break
 
-        # Serial read section
-
+        if verbose:
+            print('<<<user_interface.serial_ogren() fonksiyonundan cikis yapiliyor...')
+    def raspbery_durum_ogren(self):
+        if verbose:
+            print('>>>user_interface.raspbery_durum_ogren() fonksiyonuna giris yapiliyor...')
+        try:
+            ip = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ip.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+            ip.close()
+        except Exception as error_name:
+            print(error_name)
+            self.hata = False
+            self.variable1.set("Kapı Çalışmıyor.")
+            if verbose:
+                print(error_name)
+            else:
+                pass
+        if verbose:
+            print('<<<user_interface.raspbery_durum_ogren() fonksiyonundan cikis yapiliyor...')
     def ip_adres_ogren(self):
+        if verbose:
+            print('>>>user_interface.ip_adres_ogren() fonksiyonuna giris yapiliyor...')
         try:
             ip = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             ip.connect(("8.8.8.8", 80))
             self.ip_adres = (ip.getsockname()[0])
             ip.close()
         except Exception as error_name:
+            print(error_name)
+            self.hata = False
+            self.variable1.set("İnternet Bağlantınız yok.")
             if verbose:
                 print(error_name)
             else:
                 pass
+        if verbose:
+            print('<<<user_interface.ip_adres_ogren() fonksiyonundan cikis yapiliyor...')
     def configure_interface(self):
         if verbose:
             print('>>>user_interface.start_gui() fonksiyonuna giris yapiliyor...')
@@ -191,7 +201,7 @@ class user_interface(Frame):
 
         #################################### Labels ###########################################
         self.text_1        = Label(self.frame_one,textvariable=self.variable1,borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
-        self.text_1.grid(row=0,column=1,padx=25,pady=80,rowspan=3,columnspan=2)
+        self.text_1.grid(row=0,column=1,padx=50,pady=80,rowspan=3,columnspan = 2)
         self.variable1.set("Kart Bilgisi Bekleniyor")
         #self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
         self.text_2        = Label(self.frame_text_1 ,text=" İsim Giriniz                            :",bg=self.bg,fg=self.fg,justify = LEFT,font ="Helvetica 15 bold italic")
@@ -216,13 +226,13 @@ class user_interface(Frame):
         #self.exit.add_command(label="Exit", command=self.parent.destroy)
         self.menu.add_cascade(label="Giriş - Çıkış Kayıtları", command=self.requeset_data_beginning)
         self.menu.add_cascade(label=" | ")
-        self.menu.add_cascade(label="Yeni Kişi Ekleme", command=self.start_interface)
-        self.menu.add_cascade(label=" | ")
-        self.menu.add_cascade(label= "Kart Okuma Aktif", command=self.serial_degistir)
+        self.menu.add_cascade(label= "Kart Okuma Kapalı", command=self.serial_degistir)
 
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapiliyor...')
     def serial_degistir(self):
+        if verbose:
+            print('>>>user_interface.serial_degistir() fonksiyonuna giris yapiliyor...')
         a = "Kart Okuma Aktif"
         b = "Kart Okuma Kapalı"
         if self.serial_durdur ==  "loop_end":
@@ -233,8 +243,12 @@ class user_interface(Frame):
             self.serial_durdur =  "loop_end"
             self.menu.delete(a)
             self.menu.add_cascade(label=b, command=self.serial_degistir)
+        if verbose:
+            print('<<<user_interface.serial_degistir() fonksiyonundan cikis yapiliyor...')
     def read_serial(self):
-        if self.serial_durdur != "loop_end":
+        if verbose:
+            print('>>>user_interface.read_serial() fonksiyonuna giris yapiliyor...')
+        if self.serial_durdur != "loop_end" :
             ard = serial.Serial(self.serial_port ,9600,timeout=2)
             msg = ard.readline()
             if str(msg) != "b''":
@@ -249,7 +263,8 @@ class user_interface(Frame):
                     print("Read card : ",self.message)
             else:
                 self.message = ""
-
+        if verbose:
+            print('<<<user_interface.read_serial() fonksiyonundan cikis yapiliyor...')
         root.after(300,run.read_serial)
     def send_data(self):
         if verbose:
@@ -327,7 +342,8 @@ class user_interface(Frame):
         self.serial_degistir()
         self.start_interface()
     def data_waiting(self):
-        if self.backup != 'loop_end':
+
+        if self.backup != 'loop_end' and self.hata:
             self.dot = self.dot + '.'
             if self.dot == '....':
                 self.dot = ""
@@ -414,10 +430,15 @@ class user_interface(Frame):
         self.popup.configure(background=self.bg, borderwidth=0)
         #self.popup.attributes("-fullscreen", True)
 
+
         self.grid(sticky=(N, S, W, E))
         self.popup.grid_rowconfigure(0, weight=0)
         self.popup.grid_columnconfigure(0, weight=0)
         self.tree = tkinter.ttk.Treeview(self.popup, height=20)#,rowheight=50)
+        self.tree.Style().configure("Treeview", background="#383838",
+                              foreground="white", fieldbackground="red")
+
+
 
         self.tree.place(x=40, y=95)
         # self.tree.configure(bg = self.bg)
@@ -445,7 +466,6 @@ class user_interface(Frame):
         self.tree.grid(sticky=(N, S, W, E), row=0, column=0, padx=0, pady=0, columnspan=12, rowspan=4)
 
         self.canvas = Canvas(self.tree, relief=SUNKEN, borderwidth=2)  # ,
-        # scrollregion=('-11c', '-11c', '50c', '20c'))
         self.vscroll = Scrollbar(self.tree, command=self.canvas.yview)
 
         self.canvas.configure(yscrollcommand=self.vscroll.set)

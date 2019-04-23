@@ -13,12 +13,10 @@ import sys
 
 
 global verbose
-global rfid_yes
 global config
 
 
 config = configparser.ConfigParser()
-rfid_yes = True
 verbose = True
 class raspi:
     def __init__(self):
@@ -102,7 +100,7 @@ class raspi:
         GPIO.setup(self.mavi  ,GPIO.OUT)
         if verbose:
             print('<<<raspi.pin_tanimla() fonksiyonundan cikis yapiliyor...')
-        GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
+        GPIO.output(self.manyetik_kapi_port,GPIO.LOW)
         #commit = Thread(target=self.commit_data)
         #basla = Thread(target=self.loop)
         #commit.start()
@@ -110,13 +108,13 @@ class raspi:
     def kilitle(self):
         if verbose:
             print('>>>raspi.kilitle() fonksiyonuna giris yapiliyor...')
-        GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
+        GPIO.output(self.manyetik_kapi_port,GPIO.LOW)
         if verbose:
             print('<<<raspi.kilitle() fonksiyonundan cikis yapiliyor...')
     def kilit_ac(self):
         if verbose:
             print('>>>raspi.kilit_ac() fonksiyonuna giris yapiliyor...')
-        GPIO.output(self.manyetik_kapi_port,GPIO.LOW)
+        GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
         kapanmaZamani = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
         sure = timedelta(seconds = int(config['veri']['kapi_ac_izin']))
         kapanmaZamani = kapanmaZamani + sure
@@ -133,29 +131,21 @@ class raspi:
         rest = dec /16
         return digits[int(rest)] + digits[int(x)]
     def end_read(self,signal,frame):
-        print("\nCtrl+C captured, ending read.")
+        if verbose:
+            print("\nCtrl+C captured, ending read.")
         self.rdr.cleanup()
         sys.exit()
     def commit_data(self):
         try:
             mysocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            print(1)
             mysocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            print(2)
             mysocket.bind((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-            print(3)
             mysocket.listen(5)
-            print(4)
             (client, (ip,port)) = mysocket.accept()
-            print(5)
             data = client.recv(int(config['veri']['raspberry_buffer_size']))
-            print(6)
             self.okunanVeri = data.decode()
-            print(7)
             client.send(b"knock knock knock, I'm the server")
-            print(8)
             mysocket.close()
-            print(9)
             sart = self.okunanVeri.split(",")
 
             if sart[0] == "True":
@@ -237,11 +227,13 @@ class raspi:
                 self.data.commit()
 
                 if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                    print(  "kilitle")
+                    if verbose:
+                        print(  "kilitle")
                     izin = Thread(target=self.kilitle)
                     rgb = Thread(target=self.redOn)
                 else:
-                    print("kilit ac")
+                    if verbose:
+                        print("kilit ac")
                     alinan = self.veri.execute("select * from people").fetchall()
                     self.data.close()
                     for i in alinan:
