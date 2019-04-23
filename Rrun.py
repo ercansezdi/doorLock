@@ -17,7 +17,7 @@ global config
 
 
 config = configparser.ConfigParser()
-verbose = True
+verbose = False
 class raspi:
     def __init__(self):
         self.klasor_olustur()
@@ -147,7 +147,7 @@ class raspi:
             client.send(b"knock knock knock, I'm the server")
             mysocket.close()
             sart = self.okunanVeri.split(",")
-
+            print('***',sart)
             if sart[0] == "True":
                 self.ip_address = sart[1]
                 self.okunanVeri = False
