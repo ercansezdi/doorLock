@@ -22,21 +22,23 @@ class raspi:
     def __init__(self):
         self.klasor_olustur()
         config.read(self.address + "conf/configuration.cfg")
-        self.manyetik_kapi_port = 3
+        self.manyetik_kapi_port_1 = 3
         self.kirmizi=29
         self.yesil=31
         self.mavi =33
+        self.button_pin = 10
         self.yedek_kart = True
         self.ara_zaman = -5
         self.rdr = RFID()
         self.util = self.rdr.util()
         self.util.debug = True
+
         signal.signal(signal.SIGINT, self.end_read)
     def redOn(self):
         GPIO.output(self.kirmizi,GPIO.LOW)
         GPIO.output(self.yesil  ,GPIO.HIGH)
         GPIO.output(self.mavi   ,GPIO.HIGH)
-        sleep(int(config['veri']['lamba_suresi']))
+    def redOf(self):
         GPIO.output(self.kirmizi,GPIO.HIGH)
         GPIO.output(self.yesil  ,GPIO.HIGH)
         GPIO.output(self.mavi  ,GPIO.HIGH)
@@ -44,15 +46,16 @@ class raspi:
         GPIO.output(self.kirmizi,GPIO.HIGH)
         GPIO.output(self.yesil,GPIO.LOW)
         GPIO.output(self.mavi ,GPIO.HIGH)
-        sleep(int(config['veri']['lamba_suresi']))
+        sleep(int(config['veri']['lamba_suresi_yesil']))
         GPIO.output(self.kirmizi,GPIO.HIGH)
         GPIO.output(self.yesil,GPIO.HIGH)
         GPIO.output(self.mavi,GPIO.HIGH)
+        self.redOn()
     def blueOn(self):
         GPIO.output(self.kirmizi,GPIO.HIGH)
         GPIO.output(self.yesil,GPIO.HIGH)
         GPIO.output(self.mavi ,GPIO.LOW)
-        sleep(int(config['veri']['lamba_suresi']))
+        sleep(int(config['veri']['lamba_suresi_mavi']))
         GPIO.output(self.kirmizi,GPIO.HIGH)
         GPIO.output(self.yesil,GPIO.HIGH)
         GPIO.output(self.mavi,GPIO.HIGH)
@@ -91,38 +94,34 @@ class raspi:
     def pin_tanimla(self):
         if verbose:
             print('>>>raspi.pin_tanimla() fonksiyonuna giris yapiliyor...')
-        GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
-
-        GPIO.setup(self.manyetik_kapi_port,GPIO.OUT) #3. pin manyetik kapi kilidi +
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.button_pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN )
+        GPIO.setup(self.manyetik_kapi_port_1,GPIO.OUT) #3. pin manyetik kapi kilidi +
         GPIO.setup(self.kirmizi,GPIO.OUT)
         GPIO.setup(self.yesil  ,GPIO.OUT)
         GPIO.setup(self.mavi  ,GPIO.OUT)
         if verbose:
             print('<<<raspi.pin_tanimla() fonksiyonundan cikis yapiliyor...')
-        GPIO.output(self.manyetik_kapi_port,GPIO.LOW)
-        #commit = Thread(target=self.commit_data)
-        #basla = Thread(target=self.loop)
-        #commit.start()
-        #basla.start()
+        self.kilitle()
     def kilitle(self):
         if verbose:
             print('>>>raspi.kilitle() fonksiyonuna giris yapiliyor...')
-        GPIO.output(self.manyetik_kapi_port,GPIO.LOW)
+        GPIO.output(self.manyetik_kapi_port_1,GPIO.HIGH)
         if verbose:
             print('<<<raspi.kilitle() fonksiyonundan cikis yapiliyor...')
     def kilit_ac(self):
         if verbose:
             print('>>>raspi.kilit_ac() fonksiyonuna giris yapiliyor...')
-        GPIO.output(self.manyetik_kapi_port,GPIO.HIGH)
+        GPIO.output(self.manyetik_kapi_port_1,GPIO.LOW)
         kapanmaZamani = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
         sure = timedelta(seconds = int(config['veri']['kapi_ac_izin']))
         kapanmaZamani = kapanmaZamani + sure
         guncelSure = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
         while  guncelSure < kapanmaZamani:
             guncelSure = datetime.strptime(datetime.today().strftime('%H:%M:%S'),'%H:%M:%S')
-        self.kilitle()
 
+        self.kilitle()
         if verbose:
             print('<<<raspi.kilit_ac() fonksiyonundan cikis yapiliyor...')
     def toHex(self,dec):
@@ -195,7 +194,17 @@ class raspi:
     def loop(self):
         if verbose:
             print("Waiting data . . .")
+        self.redOn()
+        self.kilitle()
         while True:
+
+            if GPIO.input(self.button_pin) == GPIO.HIGH:
+                if verobse:
+                    print("Button clicked.")
+                izin = Thread(target=self.kilit_ac)
+                rgb = Thread(target=self.greenOn)
+                izin.start()
+                rgb.start()
             #self.rdr.wait_for_tag()
             (error, data) = self.rdr.request()
             (error, uid) = self.rdr.anticoll()
@@ -208,6 +217,7 @@ class raspi:
                 sleep(0.1)
             else:
                 self.okunanKart =False
+
             if self.okunanKart != False:
                 self.data = sqlite3.connect(self.address + "database/register.db")
                 self.veri = self.data.cursor()
@@ -248,13 +258,12 @@ class raspi:
                     self.veri.execute("INSERT INTO people (ad_soyad,numara,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,numara,giris_saat,cikis_saat))
                     self.data.commit()
                     self.data.close()
+                    self.redOf()
                     izin = Thread(target=self.kilit_ac)
-                    rgb = Thread(target=self.greenOn
-                                                                                        )
+                    rgb = Thread(target=self.greenOn)
 
                 izin.start()
                 rgb.start()
-                sleep(int(config['veri']['lamba_suresi']))
 
 
 
