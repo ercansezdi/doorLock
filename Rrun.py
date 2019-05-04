@@ -199,7 +199,7 @@ class raspi:
         while True:
 
             if GPIO.input(self.button_pin) == GPIO.HIGH:
-                if verobse:
+                if verbose:
                     print("Button clicked.")
                 izin = Thread(target=self.kilit_ac)
                 rgb = Thread(target=self.greenOn)
