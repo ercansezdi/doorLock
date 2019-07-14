@@ -94,7 +94,7 @@ class raspi:
         if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
             self.veri.execute("""CREATE TABLE {} (
             'ad_soyad'	TEXT,
-            'numara'   TEXT,
+            'TC_no'    TEXT,
             'kart_id'  TEXT,
             PRIMARY KEY(kart_id));""".format('people'))
             self.data.commit()
@@ -157,19 +157,27 @@ class raspi:
             client.send(b"knock knock knock, I'm the server")
             mysocket.close()
             sart = self.okunanVeri.split(",")
-            print('***',sart)
+            print('*-*-*',sart)
             if sart[0] == "True":
                 self.ip_address = sart[1]
                 self.okunanVeri = False
                 self.veri_yolla_bilgisayar()
             else:
+                print('---',self.okunanVeri)
                 if self.okunanVeri != ",":
+                    print(1)
                     parcala = self.okunanVeri.split(",")
+                    print(2)
                     self.data = sqlite3.connect(self.address + "database/members.db")
+                    print(3)
                     self.veri = self.data.cursor()
+                    print
+                    print(parcala[0],parcala[1],parcala[2])
                     buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(parcala[2]) + "')").fetchone()[0]
+                    print('4')
                     if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                        self.veri.execute("INSERT INTO people (ad_soyad,numara,kart_id) VALUES (?,?,?)",(parcala[0],parcala[1],parcala[2]))
+                        print('******')
+                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id) VALUES (?,?,?)",(parcala[0],parcala[1],parcala[2]))
                         self.data.commit()
                         self.data.close()
                         if verbose:
@@ -219,10 +227,10 @@ class raspi:
             #self.rdr.wait_for_tag()
             (error, data) = self.rdr.request()
             (error, uid) = self.rdr.anticoll()
-            #if int(datetime.today().strftime('%S')) % 10 == 0:
-            #    izin = Thread(target=self.commit_data)
-            #    izin.start()
-            #    sleep(1)
+            if int(datetime.today().strftime('%S')) % 5 == 0:
+                izin = Thread(target=self.commit_data)
+                izin.start()
+                sleep(0.1)
             if not(error):
 
                 self.okunanKart= str(self.toHex(int(uid[0]))) + " " +str(self.toHex(uid[1]))+ " " +str(self.toHex(uid[2])) + " " +str(self.toHex(uid[3]))
@@ -238,7 +246,7 @@ class raspi:
                 if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
                     self.veri.execute("""CREATE TABLE {} (
                     'ad_soyad'	TEXT,
-                    'numara'   TEXT,
+                    'TC_Kimlik_No'   TEXT,
                     'giris_saat'   TEXT,
                     'cikis_saat'   TEXT
                     );""".format('people'))
@@ -260,16 +268,18 @@ class raspi:
                         print("kilit ac")
                     alinan = self.veri.execute("select * from people").fetchall()
                     self.data.close()
+                    print('Alinan')
+                    print(alinan)
                     for i in alinan:
                         if bool(i[2] == self.okunanKart):
                             ad_soyad = i[0]
-                            numara = i[1]
+                            TC_numara = i[1]
                             giris_saat = datetime.today().strftime("%d/%m/%y %H:%M:%S")
                             cikis_saat = None
                             break
                     self.data = sqlite3.connect(self.address + "database/register.db")
                     self.veri = self.data.cursor()
-                    self.veri.execute("INSERT INTO people (ad_soyad,numara,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,numara,giris_saat,cikis_saat))
+                    self.veri.execute("INSERT INTO people (ad_soyad,TC_Kimlik_No,giris_saat,cikis_saat) VALUES (?,?,?,?)",(ad_soyad,TC_numara,giris_saat,cikis_saat))
                     self.data.commit()
                     self.data.close()
                     self.redOf()

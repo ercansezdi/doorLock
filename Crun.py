@@ -130,10 +130,9 @@ class user_interface(Frame):
                 self.serial_port = "COM3" #port
 
                 print('Serial Port:', self.serial_port)
-                print('édsdsd')
             except Exception as error_name:
                 if verbose:
-                    print(error_name)
+                    print('3__' + str(error_name))
                 else:
                     pass
                 self.port_counter = self.port_counter + 1
@@ -152,7 +151,7 @@ class user_interface(Frame):
             ip.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
             ip.close()
         except Exception as error_name:
-            print(error_name)
+            print('4__' + str(error_name))
             self.hata = False
             self.variable1.set("Kapı Çalışmıyor.")
             if verbose:
@@ -170,7 +169,7 @@ class user_interface(Frame):
             self.ip_adres = (ip.getsockname()[0])
             ip.close()
         except Exception as error_name:
-            print(error_name)
+            print('5__'+ str(error_name))
             self.hata = False
             self.variable1.set("İnternet Bağlantınız yok.")
             if verbose:
@@ -207,11 +206,11 @@ class user_interface(Frame):
         self.text_1.grid(row=0,column=1,padx=50,pady=80,rowspan=3,columnspan = 2)
         self.variable1.set("Kart Bilgisi Bekleniyor")
         #self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
-        self.text_2        = Label(self.frame_text_1 ,text=" İsim Giriniz                            :",bg=self.bg,fg=self.fg,justify = LEFT,font ="Helvetica 15 bold italic")
+        self.text_2        = Label(self.frame_text_1 ,text=" Ad-Soyad Giriniz                            :",bg=self.bg,fg=self.fg,justify = LEFT,font ="Helvetica 15 bold italic")
         self.text_2.grid(row=0,column=0,padx=5,pady = 0)
-        self.text_3        = Label(self.frame_text_2,text=" Soyisim Giriniz                     : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
+        self.text_3        = Label(self.frame_text_2,text=" Öğrenci Numarasi Giriniz                     : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_3.grid(row=1,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
-        self.text_4        = Label(self.frame_text_3,text="Öğrenci Numarasi Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
+        self.text_4        = Label(self.frame_text_3,text="TC. Kimlik No Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
         self.text_4.grid(row=2,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
         self.text_5        = Label(self.frame_three,textvariable=self.variable2,borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
         self.text_5.grid(row=0,column=1,padx=25,pady=80,rowspan=3,columnspan=2)
@@ -220,10 +219,10 @@ class user_interface(Frame):
 
         self.name          = Entry(self.frame_text_1,font ="Helvetica 12 bold italic")
         self.name.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
-        self.surname       = Entry(self.frame_text_2,font ="Helvetica 12 bold italic")
-        self.surname.grid(row=1,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
-        self.studentNumber = Entry(self.frame_text_3,font ="Helvetica 12 bold italic")
-        self.studentNumber.grid(row=2,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
+        self.studentNumber       = Entry(self.frame_text_2,font ="Helvetica 12 bold italic")
+        self.studentNumber.grid(row=1,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
+        self.TC_NO = Entry(self.frame_text_3,font ="Helvetica 12 bold italic")
+        self.TC_NO.grid(row=2,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
 
         #################################### Menu #####################################33
         #self.exit.add_command(label="Exit", command=self.parent.destroy)
@@ -276,28 +275,29 @@ class user_interface(Frame):
         if self.name.get() == "" or self.name.get() == " " or self.name.get() == " " or self.name.get() == "   ":
             self.name.insert(0, '')
             self.name.insert(0, 'Boş Birakilamaz.')
-        if self.surname.get() == "" or self.surname.get() == " " or self.surname.get() == "  " or self.surname.get() == "   ":
-            self.surname.insert(0, 'Boş Birakilamaz.')
-        if self.studentNumber.get() == ""  or self.studentNumber.get() == " " or self.studentNumber.get() == "  " or self.studentNumber.get() == "   ":
+        if self.studentNumber.get() == "" or self.studentNumber.get() == " " or self.studentNumber.get() == "  " or self.studentNumber.get() == "   ":
             self.studentNumber.insert(0, 'Boş Birakilamaz.')
+        if self.TC_NO.get() == ""  or self.TC_NO.get() == " " or self.TC_NO.get() == "  " or self.TC_NO.get() == "   ":
+            self.TC_NO.insert(0, 'Boş Birakilamaz.')
 
         if self.name.get() != "" and self.name.get() != "Boş Birakilamaz." and self.name.get() != " " and self.name.get() != " " and self.name.get() != "   ":
-            if self.surname.get() != "" and self.surname.get() != "Boş Birakilamaz." and self.surname.get() != " " and self.surname.get() != "  " and self.surname.get() != "   ":
-                if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Birakilamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
+            if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Birakilamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
+                if self.TC_NO.get() != "" and self.TC_NO.get() != "Boş Birakilamaz." and self.TC_NO.get() != " " and self.TC_NO.get() != "  " and self.TC_NO.get() != "   ":
                     self.backup = "loop_end"
                     if verbose:
                         print("""
                         Gönderilecek Veriler:
-                        Name          : {}
-                        Surname       : {}
-                        Numarasi      : {}
-                        Kart Numarasi : {}
-                        """.format(self.name.get(),self.surname.get(),self.studentNumber.get(),self.message))
-                    self.send_data_ = str(self.name.get()) + " " + str(self.surname.get()) + "," + str(self.studentNumber.get()) + "," + str(self.message)
+                        Name           : {}
+                        Numarası       : {}
+                        TC No.         : {}
+                        Kart Numarasi  : {}
+                        """.format(self.name.get(),self.studentNumber.get(),self.TC_NO.get(),self.message))
 
+                    self.send_data_ = str(self.name.get()) + "," + str(self.TC_NO.get()) + "," + str(self.message)
+                    self.message = ""
                     self.name.delete(0, "end")
-                    self.surname.delete(0, "end")
                     self.studentNumber.delete(0, "end")
+                    self.TC_NO.delete(0, "end")
                     if verbose:
                         print('<<<user_interface.send_data() fonksiyonundan cikis yapiliyor...')
 
@@ -305,7 +305,7 @@ class user_interface(Frame):
                     send = Thread(target=self.send_raspberry)
                     restart_data.start()
                     send.start()
-                    
+
 
 
                 else:
@@ -329,6 +329,7 @@ class user_interface(Frame):
             try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
+                print('-----',self.send_data_)
                 self.send_data_ = self.send_data_.encode('utf-8')
                 veri.send(self.send_data_)
                 #data = s.recv(1024) #alinan veri
@@ -337,7 +338,7 @@ class user_interface(Frame):
             except Exception as error_name:
                 self.hata = False
                 if verbose:
-                    print(error_name)
+                    print('1__' + str(error_name))
                 else:
                     pass
 
@@ -357,7 +358,6 @@ class user_interface(Frame):
                     text = "Kart Bilgisi Bekleniyor"
                 self.variable1.set(text)
             else:
-                self.message = ""
                 self.backup = "loop_end"
                 self.serial_degistir()
                 print('TTT')
@@ -383,7 +383,7 @@ class user_interface(Frame):
         self.frame_three.grid_remove()
         self.frame_one.grid_remove()
         self.frame_one.grid(row = 0 ,column =0)
-        
+
         self.backup = None
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
@@ -416,7 +416,7 @@ class user_interface(Frame):
                 hata = False
             except Exception as error_name:
                 if verbose:
-                    print(error_name)
+                    print('2__' +str(error_name))
                 else:
                     pass
                 hata = True
@@ -443,7 +443,7 @@ class user_interface(Frame):
         self.tree.heading("#0", text='Numara', anchor='center')
         self.tree.column("#0", anchor="center", width=50, minwidth=35)  # W,N,S,
         # -------------------------------------------------------
-        self.tree.heading('starttime', text='Numarası', anchor='center')
+        self.tree.heading('starttime', text='TC Kimlik No', anchor='center')
         self.tree.column('starttime', anchor='center', width=100, minwidth=130)
         # -------------------------------------------------------
         self.tree.heading('endtime', text='Adı - Soyadı', anchor='center')
@@ -466,6 +466,7 @@ class user_interface(Frame):
         sira = 1
         renk = ["bir","iki"]
         for i in range(0,(len(self.alinan_veri) -1 )//4):
+            print(self.alinan_veri)
             self.tree.insert('', 'end', text= sira, values=(self.alinan_veri[2+sayac],self.alinan_veri[1+sayac],self.alinan_veri[3+sayac],self.alinan_veri[4+sayac]))
             sira = sira +1
             sayac = sayac + 4
