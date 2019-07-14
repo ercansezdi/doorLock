@@ -27,12 +27,11 @@ def end_read(signal,frame):
 
 signal.signal(signal.SIGINT, end_read)
 
-print("Starting")
+print("Starting...")
 while run:
-    rdr.wait_for_tag()
-    (error, data) = rdr.request()
-    (error, uid) = rdr.anticoll()
-    if not(error):
-        print(uid)        UUID= str(toHex(int(uid[0]))) + " " +str(toHex(uid[1]))+ " " +str(toHex(uid[2])) + " " +str(toHex(uid[3]))
-        print('XXX :',UUID)
-        time.sleep(0.1)
+	rdr.wait_for_tag()
+	(error, data) = rdr.request()
+	(error, uid) = rdr.anticoll()
+	if not(error):
+		UUID= str(toHex(int(uid[0]))) + " " +str(toHex(uid[1]))+ " " +str(toHex(uid[2])) + " " +str(toHex(uid[3]))
+		print('Kart ID :',UUID)

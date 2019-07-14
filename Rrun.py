@@ -15,13 +15,24 @@ import sys
 global verbose
 global config
 
-
 config = configparser.ConfigParser()
-verbose = False
+verbose = True
 class raspi:
     def __init__(self):
         self.klasor_olustur()
         config.read(self.address + "conf/configuration.cfg")
+        """
+        RFID PINOUT RASPBERRY
+
+            SDA  - > 24
+            SCK  - > 23
+            MOSI - > 19
+            MISO - > 21
+            IRQ  - > 18
+            GND  - > 6
+            RST  - > 22
+            3.3V - > 1
+        """
         self.manyetik_kapi_port_1 = 3
         self.kirmizi=29
         self.yesil=31
@@ -208,12 +219,15 @@ class raspi:
             #self.rdr.wait_for_tag()
             (error, data) = self.rdr.request()
             (error, uid) = self.rdr.anticoll()
-            if int(datetime.today().strftime('%S')) % 10 == 0:
-                izin = Thread(target=self.commit_data)
-                izin.start()
-                sleep(1)
+            #if int(datetime.today().strftime('%S')) % 10 == 0:
+            #    izin = Thread(target=self.commit_data)
+            #    izin.start()
+            #    sleep(1)
             if not(error):
+
                 self.okunanKart= str(self.toHex(int(uid[0]))) + " " +str(self.toHex(uid[1]))+ " " +str(self.toHex(uid[2])) + " " +str(self.toHex(uid[3]))
+                print('Kisi Okundu....',self.okunanKart)
+
                 sleep(0.1)
             else:
                 self.okunanKart =False

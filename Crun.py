@@ -127,7 +127,10 @@ class user_interface(Frame):
                 port = port_x + str(self.port_counter)
                 ard = serial.Serial(port ,9600,timeout=2)
                 hata = False
-                self.serial_port = port
+                self.serial_port = "COM3" #port
+
+                print('Serial Port:', self.serial_port)
+                print('édsdsd')
             except Exception as error_name:
                 if verbose:
                     print(error_name)
@@ -138,7 +141,6 @@ class user_interface(Frame):
                     self.hata = False
                     self.variable1.set("Ardiuno bağlanmamış.")
                     break
-
         if verbose:
             print('<<<user_interface.serial_ogren() fonksiyonundan cikis yapiliyor...')
     def raspbery_durum_ogren(self):
@@ -303,6 +305,7 @@ class user_interface(Frame):
                     send = Thread(target=self.send_raspberry)
                     restart_data.start()
                     send.start()
+                    
 
 
                 else:
@@ -338,7 +341,7 @@ class user_interface(Frame):
                 else:
                     pass
 
-        self.backup = None
+        self.backup = 'loop_end'
         if verbose:
             print('<<<user_interface.send_raspberry() fonksiyonundan cikis yapiliyor...')
         self.start_interface()
@@ -350,12 +353,14 @@ class user_interface(Frame):
                 self.dot = ""
             if self.message == "":
                 text = "Kart Bilgisi Bekleniyor" + self.dot
-                if text == "Kart Bilgisi Bekleniyor...":
+                if text == "Kart Bilgisi Bekleniyor....":
                     text = "Kart Bilgisi Bekleniyor"
                 self.variable1.set(text)
             else:
+                self.message = ""
                 self.backup = "loop_end"
                 self.serial_degistir()
+                print('TTT')
                 self.read_data_interface()
         else:
             pass
@@ -365,6 +370,7 @@ class user_interface(Frame):
             print('>>>user_interface.read_data_interface() fonksiyonuna giris yapiliyor...')
         self.frame_one.grid_remove()
         self.frame_two.grid_remove()
+        print('!!!!')
         self.frame_two.grid(row = 0 ,column = 0)
         self.frame_three.grid_remove()
 
@@ -373,10 +379,11 @@ class user_interface(Frame):
     def start_interface(self):
         if verbose:
             print('>>>user_interface.start_interface() fonksiyonuna giris yapiliyor...')
-        self.frame_one.grid_remove()
-        self.frame_one.grid(row = 0 ,column =0)
         self.frame_two.grid_remove()
         self.frame_three.grid_remove()
+        self.frame_one.grid_remove()
+        self.frame_one.grid(row = 0 ,column =0)
+        
         self.backup = None
             #self.text_variable.grid(row=0,column=1,padx=0,pady = 0,rowspan=1,columnspan=1)
         if verbose:
