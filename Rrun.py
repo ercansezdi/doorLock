@@ -96,8 +96,10 @@ class raspi:
             'ad_soyad'	TEXT,
             'TC_no'    TEXT,
             'kart_id'  TEXT,
-            PRIMARY KEY(kart_id));""".format('people'))
+            'kayit_tarihi' TEXT
+            );""".format('people'))
             self.data.commit()
+            print('-------',text)
         else:
             pass
         if verbose:
@@ -161,23 +163,19 @@ class raspi:
             if sart[0] == "True":
                 self.ip_address = sart[1]
                 self.okunanVeri = False
-                self.veri_yolla_bilgisayar()
+                self.send_login_exit()
+            elif sart[0] == "False":
+                self.ip_address = sart[1]
+                self.okunanVeri = False
+                self.send_users_data()
             else:
-                print('---',self.okunanVeri)
                 if self.okunanVeri != ",":
-                    print(1)
                     parcala = self.okunanVeri.split(",")
-                    print(2)
                     self.data = sqlite3.connect(self.address + "database/members.db")
-                    print(3)
                     self.veri = self.data.cursor()
-                    print
-                    print(parcala[0],parcala[1],parcala[2])
                     buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(parcala[2]) + "')").fetchone()[0]
-                    print('4')
                     if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                        print('******')
-                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id) VALUES (?,?,?)",(parcala[0],parcala[1],parcala[2]))
+                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?)",(parcala[0],parcala[1],parcala[2]),parcala[3])
                         self.data.commit()
                         self.data.close()
                         if verbose:
@@ -187,14 +185,34 @@ class raspi:
         except Exception as error_name:
             mysocket.close()
             if verbose:
-                print(2," ",error_name)
+                print("2__",error_name)
 
             else:
                 pass
             sleep(5)
-    def veri_yolla_bilgisayar(self):
+    def send_login_exit(self):
         self.okunanVeri = ","
         self.data = sqlite3.connect(self.address + "database/register.db")
+        self.veri = self.data.cursor()
+        oku = self.veri.execute("select * from people").fetchall()
+
+        bos = " "
+
+        for i in oku:
+            for j in i:
+                bos= bos + "," + str(j)
+        self.data.commit()
+        text = bos
+        print('-------',text)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
+        text = text.encode('utf-8')
+        s.send(text)
+        data = s.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
+        s.close()
+    def send_users_data(self):
+        self.okunanVeri = ","
+        self.data = sqlite3.connect(self.address + "database/members.db")
         self.veri = self.data.cursor()
         oku = self.veri.execute("select * from people").fetchall()
         bos = " "
@@ -203,6 +221,7 @@ class raspi:
                 bos= bos + "," + str(j)
         self.data.commit()
         text = bos
+        print('*-*---*-*-',text)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
         text = text.encode('utf-8')
