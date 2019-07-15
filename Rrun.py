@@ -99,7 +99,6 @@ class raspi:
             'kayit_tarihi' TEXT
             );""".format('people'))
             self.data.commit()
-            print('-------',text)
         else:
             pass
         if verbose:
@@ -159,7 +158,6 @@ class raspi:
             client.send(b"knock knock knock, I'm the server")
             mysocket.close()
             sart = self.okunanVeri.split(",")
-            print('*-*-*',sart)
             if sart[0] == "True":
                 self.ip_address = sart[1]
                 self.okunanVeri = False
@@ -168,6 +166,15 @@ class raspi:
                 self.ip_address = sart[1]
                 self.okunanVeri = False
                 self.send_users_data()
+            elif sart[0] == "delete":
+                self.data = sqlite3.connect(self.address + "database/members.db")
+                self.veri = self.data.cursor()
+                self.veri.execute("Delete from people where kart_id='" + sart[2] + "'")
+                self.data.commit()
+                self.data.close()
+                if verbose:
+                    print("<> Deleted : ",sart[1])
+
             else:
                 if self.okunanVeri != ",":
                     parcala = self.okunanVeri.split(",")
@@ -175,7 +182,7 @@ class raspi:
                     self.veri = self.data.cursor()
                     buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(parcala[2]) + "')").fetchone()[0]
                     if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?)",(parcala[0],parcala[1],parcala[2]),parcala[3])
+                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?,?)",(parcala[0],parcala[1],parcala[2],parcala[3]))
                         self.data.commit()
                         self.data.close()
                         if verbose:
@@ -203,7 +210,6 @@ class raspi:
                 bos= bos + "," + str(j)
         self.data.commit()
         text = bos
-        print('-------',text)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
         text = text.encode('utf-8')
@@ -221,7 +227,6 @@ class raspi:
                 bos= bos + "," + str(j)
         self.data.commit()
         text = bos
-        print('*-*---*-*-',text)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
         text = text.encode('utf-8')
@@ -253,7 +258,8 @@ class raspi:
             if not(error):
 
                 self.okunanKart= str(self.toHex(int(uid[0]))) + " " +str(self.toHex(uid[1]))+ " " +str(self.toHex(uid[2])) + " " +str(self.toHex(uid[3]))
-                print('Kisi Okundu....',self.okunanKart)
+                if verbose:
+                    print('Kisi Okundu....',self.okunanKart)
 
                 sleep(0.1)
             else:
@@ -279,16 +285,14 @@ class raspi:
 
                 if buKisiEklimi == 0:#bu kişi ekli değil ekle
                     if verbose:
-                        print(  "kilitle")
+                        print( "<>   kilitle")
                     izin = Thread(target=self.kilitle)
                     rgb = Thread(target=self.redOn)
                 else:
                     if verbose:
-                        print("kilit ac")
+                        print("<>  kilit ac")
                     alinan = self.veri.execute("select * from people").fetchall()
                     self.data.close()
-                    print('Alinan')
-                    print(alinan)
                     for i in alinan:
                         if bool(i[2] == self.okunanKart):
                             ad_soyad = i[0]

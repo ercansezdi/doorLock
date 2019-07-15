@@ -208,64 +208,48 @@ class user_interface(Frame):
     def configure_interface(self):
         if verbose:
             print('>>>user_interface.start_gui() fonksiyonuna giris yapiliyor...')
-        #################################### Frames ###########################################
-        """
-        self.frame_text_1 = Frame(self.frame_two)
-        self.frame_text_1.grid(row = 0,column = 0,pady = 10,rowspan=1,columnspan =1)
-        self.frame_text_1.configure(background=self.bg )
-        self.frame_text_2 = Frame(self.frame_two)
-        self.frame_text_2.grid(row = 1,column = 0,pady = 10,rowspan=1,columnspan =1)
-        self.frame_text_2.configure(background=self.bg )
-        self.frame_text_3 = Frame(self.frame_two)
-        self.frame_text_3.grid(row = 2,column = 0,pady = 10,rowspan=1,columnspan =1)
-        self.frame_text_3.configure(background=self.bg )
 
-        """
         self.frame_buttons = Frame(self.frame_two)
         #################################### Buttons ##########################################
-        self.ekle    = Button(self.frame_buttons,text = ' + ',wraplength=750,anchor="center",height=2,width=20,highlightbackground=self.bg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.ekle_popup)
+        self.ekle    = Button(self.frame_buttons,text = ' + ',wraplength=750,anchor="center",height=2,width=20,highlightbackground=self.bg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.ekle_members)
         self.ekle.grid(row=0,column=0, sticky=W,padx= 0, pady = 0)
-        self.cikar    = Button(self.frame_buttons,text = ' - ',wraplength=750,anchor="center",height=2,width=20,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.parent.destroy)
+        self.cikar    = Button(self.frame_buttons,text = ' - ',wraplength=750,anchor="center",height=2,width=20,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.sil_members)
         self.cikar.grid(row=0,column=1, sticky=W,padx= 0, pady = 0)
         self.durdur    = Button(self.frame_buttons,text =  "Kart Okuma Kapalı",wraplength=750,anchor="center",height=2,width=20,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.serial_degistir)
         self.durdur.grid(row=0,column=2, sticky=W,padx= 0, pady = 0)
 
-        """
-
-
-        #################################### Labels ###########################################
-        self.text_1        = Label(self.frame_one,textvariable=self.variable1,borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
-        self.text_1.grid(row=0,column=1,padx=50,pady=80,rowspan=3,columnspan = 2)
-        self.variable1.set("Kart Bilgisi Bekleniyor")
-        #self.text_variable = Label(self.frame_one,textvariable=self.variable,borderwidth=0,bg="#008000")
-        self.text_2        = Label(self.frame_text_1 ,text=" Ad-Soyad Giriniz                            :",bg=self.bg,fg=self.fg,justify = LEFT,font ="Helvetica 15 bold italic")
-        self.text_2.grid(row=0,column=0,padx=5,pady = 0)
-        self.text_3        = Label(self.frame_text_2,text=" Öğrenci Numarasi Giriniz                     : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
-        self.text_3.grid(row=1,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
-        self.text_4        = Label(self.frame_text_3,text="TC. Kimlik No Giriniz    : ",borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 15 bold italic")
-        self.text_4.grid(row=2,column=0,padx=5,pady = 0,rowspan=1,columnspan=1)
-        self.text_5        = Label(self.frame_three,textvariable=self.variable2,borderwidth=0,bg=self.bg,fg=self.fg,font ="Helvetica 25 bold italic")
-        self.text_5.grid(row=0,column=1,padx=25,pady=80,rowspan=3,columnspan=2)
-        self.variable2.set("Bilgiler Gönderiliyor")
-        """
-        #################################### Enty ############################################
-
-
-
-
-
         #################################### Menu #####################################33
         #self.exit.add_command(label="Exit", command=self.parent.destroy)
-        self.menu.add_cascade(label="Verileri Güncelle", command=self.requeset_data)
+        self.menu.add_cascade(label="Giriş - Çıkış Kayıtları", command=self.requeset_data)
         self.menu.add_cascade(label=" | ")
-        self.menu.add_cascade(label="Kişi Ekle Çıkar", command=self.requeset_data_2)
-        self.menu.add_cascade(label=" | ")
-        self.menu.add_cascade(label= "Kart Okuma Kapalı", command=self.serial_degistir)
+        self.menu.add_cascade(label="Üye İşlemleri", command=self.requeset_data_2)
 
 
         if verbose:
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapiliyor...')
-    def ekle_popup(self):
+    def sil_members(self):
+        selected_item = self.tree_2.selection()[0] ## get selected item
+        self.tree_2.delete(selected_item)
+        sira = 0;
+        #
+        if selected_item[-1] != 0:
+            if selected_item[-2] != 0:
+                if selected_item[-3] != 0:
+                    sira = int(str(selected_item[-3]) + str(selected_item[-2]) + str(selected_item[-1]))
+                else:
+                    sira = int(str(selected_item[-2]) + str(selected_item[-1]))
+            else:
+                sira = int(selected_item[-1])
+        else:
+            sira = 0
+
+        #
+        print(self.members_list[sira-1])
+        self.send_data_ = "delete" + "," + str(self.members_list[sira-1][0]) + "," + str(self.members_list[sira-1][2])
+        self.send_raspberry()
+
+    def ekle_members(self):
+
         self.popup = Toplevel()
         self.popup.geometry('370x155')
         self.popup.configure(background=self.bg)
@@ -275,6 +259,7 @@ class user_interface(Frame):
 
         self.popup_frame_one = Frame(self.popup)
         self.popup_frame_one.configure(background=self.bg)
+        self.frame_one.grid(row=0,column=0)
         self.popup_frame_two = Frame(self.popup)
         self.popup_frame_two.configure(background=self.bg)
         self.popup_frame_two.grid(row=0,column=0)
@@ -299,6 +284,7 @@ class user_interface(Frame):
 
         self.sendButton    = Button(self.popup_frame_one,text = 'Bilgiyi Gönder',wraplength=750,anchor="center",height=1,width=13,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.send_data)
         self.sendButton.grid(row=3,column=0, sticky=W,padx= 120, pady = 25,columnspan=2,rowspan=1)
+        self.serial_degistir()
     def serial_degistir(self):
         if verbose:
             print('>>>user_interface.serial_degistir() fonksiyonuna giris yapiliyor...')
@@ -327,6 +313,8 @@ class user_interface(Frame):
                 self.message = self.message[1] + " " + self.message[2] + " " + self.message[3] + " " + self.message[4]
                 if verbose:
                     print("Read card : ",self.message)
+                self.popup_frame_two.grid_remove()
+                self.popup_frame_one.grid(row=0,column=0)
             else:
                 self.message = ""
             if verbose:
@@ -335,86 +323,87 @@ class user_interface(Frame):
     def treeview_login_exit(self):
         self.frame_two.grid_remove()
         self.frame_one.grid(row=0,column=0)
-        self.tree = tkinter.ttk.Treeview(self.frame_one, height=30)
-        self.tree.place(x=55, y=95)
-        # self.tree.configure(bg = self.bg)
-        vsb = tkinter.ttk.Scrollbar(self.frame_one, orient="vertical", command=self.tree.yview)
+        self.tree_1 = tkinter.ttk.Treeview(self.frame_one, height=30)
+        self.tree_1.place(x=55, y=95)
+        # self.tree_1.configure(bg = self.bg)
+        vsb = tkinter.ttk.Scrollbar(self.frame_one, orient="vertical", command=self.tree_1.yview)
         vsb.place(x = 552, y=5, height=605)
-        self.tree.configure(yscrollcommand=vsb.set)
+        self.tree_1.configure(yscrollcommand=vsb.set)
 
-        self.tree['columns'] = ('starttime', 'endtime', 'status','status_1')
+        self.tree_1['columns'] = ('starttime', 'endtime', 'status','status_1')
         # -------------------------------------------------------
-        self.tree.heading("#0", text='Numara', anchor='center')
-        self.tree.column("#0", anchor="center", width=50, minwidth=35)  # W,N,S,
+        self.tree_1.heading("#0", text='Numara', anchor='center')
+        self.tree_1.column("#0", anchor="center", width=50, minwidth=35)  # W,N,S,
         # -------------------------------------------------------
-        self.tree.heading('starttime', text='TC Kimlik No', anchor='center')
-        self.tree.column('starttime', anchor='center', width=100, minwidth=130)
+        self.tree_1.heading('starttime', text='TC Kimlik No', anchor='center')
+        self.tree_1.column('starttime', anchor='center', width=100, minwidth=130)
         # -------------------------------------------------------
-        self.tree.heading('endtime', text='Adı - Soyadı', anchor='center')
-        self.tree.column('endtime', anchor='center', width=150, minwidth=125)
+        self.tree_1.heading('endtime', text='Adı - Soyadı', anchor='center')
+        self.tree_1.column('endtime', anchor='center', width=150, minwidth=125)
         # -------------------------------------------------------
-        self.tree.heading('status', text='Giriş Tarih', anchor='center')
-        self.tree.column('status', anchor='center', width=130, minwidth=0)
+        self.tree_1.heading('status', text='Giriş Tarih', anchor='center')
+        self.tree_1.column('status', anchor='center', width=130, minwidth=0)
         # -------------------------------------------------------
-        self.tree.heading('status_1', text='Giriş Saati', anchor='center')
-        self.tree.column('status_1', anchor='center', width=138, minwidth=0)
+        self.tree_1.heading('status_1', text='Giriş Saati', anchor='center')
+        self.tree_1.column('status_1', anchor='center', width=138, minwidth=0)
         # -------------------------------------------------------
-        self.tree.grid(sticky=(N, S, W, E), row=0, column=0, padx=0, pady=0, columnspan=12, rowspan=4)
-        self.canvas = Canvas(self.tree, relief=SUNKEN, borderwidth=2)  # ,
-        self.vscroll = Scrollbar(self.tree, command=self.canvas.yview)
+        self.tree_1.grid(sticky=(N, S, W, E), row=0, column=0, padx=0, pady=0, columnspan=12, rowspan=4)
+        self.canvas = Canvas(self.tree_1, relief=SUNKEN, borderwidth=2)  # ,
+        self.vscroll = Scrollbar(self.tree_1, command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.vscroll.set)
-        self.tree.grid_rowconfigure(0, weight=1)
-        self.tree.grid_columnconfigure(0, weight=1)
+        self.tree_1.grid_rowconfigure(0, weight=1)
+        self.tree_1.grid_columnconfigure(0, weight=1)
         self.data = sqlite3.connect("database/register.db")
         self.veri = self.data.cursor()
         sira = 1
         okunan = self.veri.execute("select * from people").fetchall()
         for i in okunan:
             veri = i[2].split(' ')
-            self.tree.insert('', 'end', text= sira, values=(i[1],i[0],veri[0],veri[1]))
+            self.tree_1.insert('', 'end', text= sira, values=(i[1],i[0],veri[0],veri[1]))
             sira = sira + 1
         self.data.commit()
         self.data.close()
-
     def treeview_users(self):
         self.frame_one.grid_remove()
         self.frame_two.grid(row=0,column=0)
 
-        self.tree = tkinter.ttk.Treeview(self.frame_two, height=27)
-        self.tree.grid(row=0,column=0,rowspan=9)
+        self.tree_2 = tkinter.ttk.Treeview(self.frame_two, height=27)
+        self.tree_2.grid(row=0,column=0,rowspan=9)
 
-        # self.tree.configure(bg = self.bg)
-        vsb = tkinter.ttk.Scrollbar(self.frame_two, orient="vertical", command=self.tree.yview)
+        # self.tree_2.configure(bg = self.bg)
+        vsb = tkinter.ttk.Scrollbar(self.frame_two, orient="vertical", command=self.tree_2.yview)
         vsb.place(x = 553, y=0, height=564)
-        self.tree.configure(yscrollcommand=vsb.set)
+        self.tree_2.configure(yscrollcommand=vsb.set)
 
-        self.tree['columns'] = ('starttime', 'endtime', 'status')
+        self.tree_2['columns'] = ('starttime', 'endtime', 'status')
         # -------------------------------------------------------
-        self.tree.heading("#0", text='Numara', anchor='center')
-        self.tree.column("#0", anchor="center", width=40, minwidth=35)  # W,N,S,
+        self.tree_2.heading("#0", text='Numara', anchor='center')
+        self.tree_2.column("#0", anchor="center", width=40, minwidth=35)  # W,N,S,
         # -------------------------------------------------------
-        self.tree.heading('starttime', text='TC Kimlik No', anchor='center')
-        self.tree.column('starttime', anchor='center', width=145, minwidth=130)
+        self.tree_2.heading('starttime', text='TC Kimlik No', anchor='center')
+        self.tree_2.column('starttime', anchor='center', width=145, minwidth=130)
         # -------------------------------------------------------
-        self.tree.heading('endtime', text='Adı - Soyadı', anchor='center')
-        self.tree.column('endtime', anchor='center', width=195, minwidth=125)
+        self.tree_2.heading('endtime', text='Adı - Soyadı', anchor='center')
+        self.tree_2.column('endtime', anchor='center', width=195, minwidth=125)
         # -------------------------------------------------------
-        self.tree.heading('status', text='Kayıt Tarihi', anchor='center')
-        self.tree.column('status', anchor='center', width=185, minwidth=0)
+        self.tree_2.heading('status', text='Kayıt Tarihi', anchor='center')
+        self.tree_2.column('status', anchor='center', width=185, minwidth=0)
         # -------------------------------------------------------
-        self.tree.grid(sticky=(N, S, W, E), row=0, column=0, padx=0, pady=0, columnspan=12, rowspan=4)
-        self.canvas = Canvas(self.tree, relief=SUNKEN, borderwidth=2)  # ,
-        self.vscroll = Scrollbar(self.tree, command=self.canvas.yview)
+        self.tree_2.grid(sticky=(N, S, W, E), row=0, column=0, padx=0, pady=0, columnspan=12, rowspan=4)
+        self.canvas = Canvas(self.tree_2, relief=SUNKEN, borderwidth=2)  # ,
+        self.vscroll = Scrollbar(self.tree_2, command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.vscroll.set)
-        self.tree.grid_rowconfigure(0, weight=1)
-        self.tree.grid_columnconfigure(0, weight=1)
+        self.tree_2.grid_rowconfigure(0, weight=1)
+        self.tree_2.grid_columnconfigure(0, weight=1)
         self.data = sqlite3.connect("database/members.db")
         self.veri = self.data.cursor()
         sira = 1
         okunan = self.veri.execute("select * from people").fetchall()
+        self.members_list = []
         for i in okunan:
             veri = i[2].split(' ')
-            self.tree.insert('', 'end', text= sira, values=(i[1],i[0],i[3]))
+            self.members_list.append([i[0],i[1],i[2],i[3]])
+            self.tree_2.insert('', 'end', text= sira, values=(i[1],i[0],i[3]))
             sira = sira + 1
         self.data.commit()
         self.data.close()
@@ -466,7 +455,7 @@ class user_interface(Frame):
         else:
             pass
     def waiting(self):
-        self.ekle_popup.destroy()
+        self.popup.destroy()
         self.frame_two.grid_remove()
         self.frame_one.grid(row = 0, column = 0)
     def send_raspberry(self):
@@ -625,7 +614,6 @@ class user_interface(Frame):
         self.alinan_veri = ","
         self.data.close()
         self.treeview_login_exit()
-
     def user_goster(self):
         if not(os.path.isfile("database/members.db")):
             pass
