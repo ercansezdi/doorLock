@@ -1,6 +1,6 @@
-
 #!/usr/bin/env python
 import RPi.GPIO as GPIO
+from multiprocessing import Pool
 from time import strftime,sleep,strptime
 import os
 from datetime import datetime,timedelta
@@ -18,13 +18,53 @@ global config
 
 config = configparser.ConfigParser()
 verbose = True
+class buzzerClass():
+    def __init__(self):
+
+        GPIO.setmode(GPIO.BOARD)
+        self.buzzer_pin = 37
+        #GPIO.setup(self.buzzer_pin, GPIO.IN)
+        GPIO.setup(self.buzzer_pin, GPIO.OUT)
+    def buzz(self,pitch, duration):   #create the function “buzz” and feed it the pitch and duration)
+
+        if(pitch==0):
+            sleep(duration)
+            return
+        period = 1.0 / pitch     #in physics, the period (sec/cyc) is the inverse of the frequency (cyc/sec)
+        delay = period / 2     #calcuate the time for half of the wave
+        cycles = int(duration * pitch)   #the number of waves to produce is the duration times the frequency
+
+        for i in range(cycles):    #start a loop from 0 to the variable “cycles” calculated above
+            GPIO.output(self.buzzer_pin, True)   #set pin 18 to high
+            sleep(delay)    #wait with pin 18 high
+            GPIO.output(self.buzzer_pin, False)    #set pin 18 to low
+            sleep(delay)    #wait with pin 18 low
+    def play(self,tune):
+        x=0
+        if(tune==1): #giriş
+            pitches=[10, 20]
+            duration=[0.2,0.2]
+            for p in pitches:
+                self.buzz(p, duration[x])  #feed the pitch and duration to the func$
+                sleep(duration[x] *0.5)
+                x+=1
+
+        elif(tune==2):#çikiş
+            pitches=[90]
+            duration=[0.4]
+            for p in pitches:
+                self.buzz(p, duration[x])  #feed the pitch and duration to the func$
+                sleep(duration[x] *0.5)
+                x+=1
+
 class raspi:
     def __init__(self):
         self.klasor_olustur()
-        self.buzzer = buzzerClass()
         config.read(self.address + "conf/configuration.cfg")
+        self.buzzer = buzzerClass()
         """
         RFID PINOUT RASPBERRY
+
             SDA  - > 24
             SCK  - > 23
             MOSI - > 19
@@ -159,17 +199,19 @@ class raspi:
             client.send(b"knock knock knock, I'm the server")
             mysocket.close()
             sart = self.okunanVeri.split(",")
+            if verbose:
+                print("<<<<<>>>>> Veri isteği <<<<<>>>>>")
             if sart[0] == "True":
+
                 self.ip_address = sart[1]
                 self.okunanVeri = False
                 self.send_login_exit()
             elif sart[0] == "False":
+
                 self.ip_address = sart[1]
                 self.okunanVeri = False
                 self.send_users_data()
             elif sart[0] == "delete":
-                if verbose:
-                    print("<><><>  Veri Silme Talep Edildi. <><><> ")
                 self.data = sqlite3.connect(self.address + "database/members.db")
                 self.veri = self.data.cursor()
                 self.veri.execute("Delete from people where kart_id='" + sart[2] + "'")
@@ -179,14 +221,12 @@ class raspi:
                     print("<> Deleted : ",sart[1])
 
             else:
-                if verbose:
-                    print("<><><>  Uye Kaydi Talep Edildi. <><><> ")
                 if self.okunanVeri != ",":
                     parcala = self.okunanVeri.split(",")
                     self.data = sqlite3.connect(self.address + "database/members.db")
                     self.veri = self.data.cursor()
                     buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(parcala[2]) + "')").fetchone()[0]
-                    if buKisiEklimi == 0:#bu kisi ekli değil ekle
+                    if buKisiEklimi == 0:#bu kişi ekli değil ekle
                         self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?,?)",(parcala[0],parcala[1],parcala[2],parcala[3]))
                         self.data.commit()
                         self.data.close()
@@ -199,12 +239,14 @@ class raspi:
             if verbose:
                 pass
                 #print("2__",error_name)
+
             else:
                 pass
-            sleep(5)
+
+
     def send_login_exit(self):
         if verbose:
-            print('<><><> Giris cikis Kayitlari Istendi. <><><> ')
+            print("<<<< Giriş - Çıkış Kayitlari isteniyor. >>>>")
         self.okunanVeri = ","
         self.data = sqlite3.connect(self.address + "database/register.db")
         self.veri = self.data.cursor()
@@ -225,7 +267,7 @@ class raspi:
         s.close()
     def send_users_data(self):
         if verbose:
-            print('<><><> Uye Kayitlari Istendi <><><> ')
+            print("<<<<  Üye Kayitları istniyor >>>>")
         self.okunanVeri = ","
         self.data = sqlite3.connect(self.address + "database/members.db")
         self.veri = self.data.cursor()
@@ -255,10 +297,11 @@ class raspi:
                     print("Button clicked.")
                 izin = Thread(target=self.kilit_ac)
                 rgb = Thread(target=self.greenOn)
-                buzzer = Thread(target = self.buzzer.play, args=(4,))
-                buzzer.start()
+                buzzer = Thread(target = self.buzzer.play, args=(1,))
                 izin.start()
                 rgb.start()
+                sleep(0.2)
+
             #self.rdr.wait_for_tag()
             (error, data) = self.rdr.request()
             (error, uid) = self.rdr.anticoll()
@@ -294,16 +337,12 @@ class raspi:
                 buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(self.okunanKart) + "')").fetchone()[0]
                 self.data.commit()
 
-                if buKisiEklimi == 0:#bu kisi ekli değil ekle
+                if buKisiEklimi == 0:#bu kişi ekli değil ekle
                     if verbose:
                         print( "<>   kilitle")
                     izin = Thread(target=self.kilitle)
                     rgb = Thread(target=self.redOn)
                     buzzer = Thread(target = self.buzzer.play, args=(2,))
-                    izin.start()
-                    rgb.start()
-                    buzzer.start()
-                    sleep(2) # 2 saniye beklemsi gerekiyor ama daha sonrasında ardı ardına kart basma kaldir saniye ile
                 else:
                     if verbose:
                         print("<>  kilit ac")
@@ -325,65 +364,12 @@ class raspi:
                     izin = Thread(target=self.kilit_ac)
                     rgb = Thread(target=self.greenOn)
                     buzzer = Thread(target = self.buzzer.play, args=(1,))
+                buzzer.start()
+                izin.start()
+                rgb.start()
+                sleep(0.2)
 
-                    izin.start()
-                    rgb.start()
-                    buzzer.start()
 
-
-class buzzerClass():
-    def __init__(self):
-
-        GPIO.setmode(GPIO.BOARD)
-        self.buzzer_pin = 37
-        #GPIO.setup(self.buzzer_pin, GPIO.IN)
-        GPIO.setup(self.buzzer_pin, GPIO.OUT)
-    def buzz(self,pitch, duration):   #create the function “buzz” and feed it the pitch and duration)
-
-        if(pitch==0):
-            sleep(duration)
-            return
-        period = 1.0 / pitch     #in physics, the period (sec/cyc) is the inverse of the frequency (cyc/sec)
-        delay = period / 2     #calcuate the time for half of the wave
-        cycles = int(duration * pitch)   #the number of waves to produce is the duration times the frequency
-
-        for i in range(cycles):    #start a loop from 0 to the variable “cycles” calculated above
-            GPIO.output(self.buzzer_pin, True)   #set pin 18 to high
-            sleep(delay)    #wait with pin 18 high
-            GPIO.output(self.buzzer_pin, False)    #set pin 18 to low
-            sleep(delay)    #wait with pin 18 low
-    def play(self,tune):
-        x=0
-        if(tune==1): #giris
-            pitches=[10, 20]
-            duration=[0.2,0.2]
-            for p in pitches:
-                self.buzz(p, duration[x])  #feed the pitch and duration to the func$
-                sleep(duration[x] *0.5)
-                x+=1
-
-        elif(tune==2):#cikis
-            pitches=[90]
-            duration=[0.4]
-            for p in pitches:
-                self.buzz(p, duration[x])  #feed the pitch and duration to the func$
-                sleep(duration[x] *0.5)
-                x+=1
-        elif(tune==3):
-            pitches=[90]
-            duration=[0.4]
-            for p in pitches:
-                self.buzz(p, duration[x])  #feed the pitch and duration to the func$
-                sleep(duration[x] *0.5)
-                x+=1
-
-        elif(tune==4):
-            pitches=[10]
-            duration=[0.2]
-            for p in pitches:
-                self.buzz(p, duration[x])  #feed the pitch and duration to the func$
-                sleep(duration[x] *0.5)
-                x+=1
 
 if __name__ == "__main__":
 
