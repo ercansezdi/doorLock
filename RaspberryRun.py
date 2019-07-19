@@ -156,15 +156,17 @@ class raspi:
             (client, (ip,port)) = mysocket.accept()
             data = client.recv(int(config['veri']['raspberry_buffer_size']))
             self.okunanVeri = data.decode()
-            client.send(b"knock knock knock, I'm the server")
+            client.send(b"data")
             mysocket.close()
             sart = self.okunanVeri.split(",")
             if sart[0] == "True":
                 self.ip_address = sart[1]
                 self.okunanVeri = False
+                self.istenen_min_veri = sart[2]
                 self.send_login_exit()
             elif sart[0] == "False":
                 self.ip_address = sart[1]
+                self.istenen_min_veri = sart[2]
                 self.okunanVeri = False
                 self.send_users_data()
             elif sart[0] == "delete":
@@ -205,17 +207,30 @@ class raspi:
     def send_login_exit(self):
         if verbose:
             print('<><><> Giris cikis Kayitlari Istendi. <><><> ')
+
         self.okunanVeri = ","
         self.data = sqlite3.connect(self.address + "database/register.db")
         self.veri = self.data.cursor()
         oku = self.veri.execute("select * from people").fetchall()
-
         bos = " "
-
+        sayac = 0
+        if verbose:
+            print("Gönderilen veriler : ")
         for i in oku:
-            for j in i:
-                bos= bos + "," + str(j)
+            sayac = sayac + 1
+            if sayac > int(self.istenen_min_veri) or int(self.istenen_min_veri) == 0:
+                if verbose:
+                    print(i)
+                for j in i:
+                    bos= bos + "," + str(j)
+            else:
+                pass
         self.data.commit()
+        self.data.close()
+
+
+        if bos == " ":
+            bos = "False,False,False,False"
         text = bos
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.ip_address, int(config['veri']['raspberry_port'])))
@@ -223,6 +238,7 @@ class raspi:
         s.send(text)
         data = s.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
         s.close()
+
     def send_users_data(self):
         if verbose:
             print('<><><> Uye Kayitlari Istendi <><><> ')
@@ -230,11 +246,24 @@ class raspi:
         self.data = sqlite3.connect(self.address + "database/members.db")
         self.veri = self.data.cursor()
         oku = self.veri.execute("select * from people").fetchall()
+        sayac = 0
         bos = " "
+        if verbose:
+            print("Gönderilen veriler : ")
+        print('< > ',self.istenen_min_veri, " ", len(oku))
         for i in oku:
-            for j in i:
-                bos= bos + "," + str(j)
+            sayac = sayac + 1
+            if sayac > int(self.istenen_min_veri) or int(self.istenen_min_veri) == 0:
+                if verbose:
+                    print(i)
+                for j in i:
+                    bos= bos + "," + str(j)
+            else:
+                pass
         self.data.commit()
+        self.data.close()
+        if bos == " ":
+            bos = "False,False,False,False"
         text = bos
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self.ip_address, int(config['veri']['raspberry_port'])))

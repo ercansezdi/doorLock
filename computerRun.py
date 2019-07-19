@@ -26,34 +26,47 @@ config = configparser.ConfigParser()
 class configure_class:
     def __init__(self):
         self.create_folder()
+        self.create_database_1()
+        self.create_database_2()
     def create_database_1(self):
-        self.data = sqlite3.connect("database/register.db")
-        self.veri = self.data.cursor()
-        if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
-            self.veri.execute("""CREATE TABLE {} (
-            'ad_soyad'	TEXT,
-            'TC_Kimlik_No'   TEXT,
-            'giris_saat'   TEXT,
-            'cikis_saat'   TEXT
-            );""".format('people'))
+        if verbose:
+            print("--------- register.db isimli database oluşturuldu. ---------------")
+        if not(os.path.isfile("database/register.db")):
+            self.data = sqlite3.connect("database/register.db")
+            self.veri = self.data.cursor()
+            if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
+                self.veri.execute("""CREATE TABLE {} (
+                'ad_soyad'	TEXT,
+                'TC_Kimlik_No'   TEXT,
+                'giris_saat'   TEXT,
+                'cikis_saat'   TEXT
+                );""".format('people'))
+            else:
+                pass
+            self.data.commit()
+            self.data.close()
         else:
             pass
-        self.data.commit()
-        self.data.close()
     def create_database_2(self):
-        self.data = sqlite3.connect("database/members.db")
-        self.veri = self.data.cursor()
-        if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
-            self.veri.execute("""CREATE TABLE {} (
-            'ad_soyad'	TEXT,
-            'TC_no'    TEXT,
-            'kart_id'  TEXT,
-            'kayit_tarihi' TEXT
-            );""".format('people'))
+        if verbose:
+            print("--------- member.db isimli database oluşturuldu. ---------------")
+        if not(os.path.isfile("database/member.db")):
+            self.data = sqlite3.connect("database/member.db")
+            self.veri = self.data.cursor()
+            if self.veri.execute("SELECT name FROM sqlite_master").fetchone() == None:
+                self.veri.execute("""CREATE TABLE {} (
+                'ad_soyad'	TEXT,
+                'TC_no'    TEXT,
+                'kart_id'  TEXT,
+                'kayit_tarihi' TEXT
+                );""".format('people'))
+            else:
+                pass
+            self.data.commit()
+            self.data.close()
         else:
             pass
-        self.data.commit()
-        self.data.close()
+
     def create_folder(self):
         if verbose:
             print('>>>door_lock.create_folder() fonksiyonuna giris yapiliyor...')
@@ -120,6 +133,7 @@ class user_interface(Frame):
         self.variable1 = StringVar()
         self.variable2 = StringVar()
         self.variable3 = StringVar()
+        self.hata_miktari = 0
         self.serial_port = 'X'
         self.backup = "loop_end"
         self.variable = StringVar()
@@ -176,12 +190,15 @@ class user_interface(Frame):
         if verbose:
             print('>>>user_interface.raspbery_durum_ogren() fonksiyonuna giris yapiliyor...')
         try:
+
             ip = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             ip.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
             ip.close()
+            self.durdur.config(image=self.rfid_on)
         except Exception as error_name:
             print('4__' + str(error_name))
             self.hata = False
+            self.durdur.config(image=self.rfid_off)
             self.variable1.set("Kapı Çalışmıyor.")
             if verbose:
                 print(error_name)
@@ -189,6 +206,34 @@ class user_interface(Frame):
                 pass
         if verbose:
             print('<<<user_interface.raspbery_durum_ogren() fonksiyonundan cikis yapiliyor...')
+    def translate(self,harf):
+        if harf == 'Ş':
+            return 'S'
+        elif harf == 'ş':
+            return "s"
+        elif harf == 'İ':
+            return "I"
+        elif harf == 'ı':
+            return "i"
+        elif harf == 'Ö':
+            return "O"
+        elif harf == 'ö':
+            return "o"
+        elif harf == 'Ü':
+            return "U"
+        elif harf == 'ü':
+            return "u"
+        elif harf == 'Ğ':
+            return "G"
+        elif harf == 'ğ':
+            return "g"
+        elif harf == 'Ç':
+            return "C"
+        elif harf == 'ç':
+            return "c"
+        else:
+            return harf
+
     def ip_adres_ogren(self):
         if verbose:
             print('>>>user_interface.ip_adres_ogren() fonksiyonuna giris yapiliyor...')
@@ -217,11 +262,11 @@ class user_interface(Frame):
         self.user_delete = PhotoImage(file='img/user_delete.gif')
         self.rfid_off = PhotoImage(file='img/rfid_off.gif')
         self.rfid_on = PhotoImage(file='img/rfid_on.gif')
-        #self.ekle    = Button(self.frame_buttons,text = 'Üye Ekle',wraplength=750,anchor="center",height=3,width=20,highlightbackground=self.bg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.ekle_members)
-        self.ekle    = Button(self.frame_buttons,image=self.user_add ,command=self.ekle_members)
+        #self.ekle    = Button(self.frame_buttons,text = 'Üye Ekle',wraplength=750,anchor="center",height=3,width=20,highlightbackground=self.bg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.ekle_member)
+        self.ekle    = Button(self.frame_buttons,image=self.user_add ,command=self.ekle_member)
         self.ekle.grid(row=0,column=0, sticky=W,padx= 0, pady = 0)
-        #self.cikar    = Button(self.frame_buttons,text = 'Üye Sil',wraplength=750,anchor="center",height=3,width=20,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.sil_members)
-        self.cikar    = Button(self.frame_buttons,image=self.user_delete ,command=self.sil_members)
+        #self.cikar    = Button(self.frame_buttons,text = 'Üye Sil',wraplength=750,anchor="center",height=3,width=20,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.sil_member)
+        self.cikar    = Button(self.frame_buttons,image=self.user_delete ,command=self.sil_member)
         self.cikar.grid(row=0,column=1, sticky=W,padx= 0, pady = 0)
         #self.durdur    = Button(self.frame_buttons,text =  "Kart Okuma Kapalı",wraplength=750,anchor="center",height=3,width=20,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.serial_degistir)
         self.durdur    = Button(self.frame_buttons,image=self.rfid_off)# ,command=self.serial_degistir)
@@ -240,14 +285,25 @@ class user_interface(Frame):
             print('<<<user_interface.start_gui() fonksiyonundan cikis yapiliyor...')
     def data_guncelle(self):
         messagebox.showinfo("Uyarı", "Veriler Güncelleniyor...")
-        self.request_data_2()
         self.request_data()
-        messagebox.showinfo("Uyarı", "Veriler Güncellendi.")
+        if self.hata_miktari != 5:
+            messagebox.showinfo("Uyarı", "Giriş - Çıkış Kayıtları Güncellendi.")
+        self.request_data_2()
+        if self.hata_miktari != 5:
+            self.durdur.config(image=self.rfid_on)
+            messagebox.showinfo("Uyarı", "Üye kayıtları Güncellendi.")
+        if self.hata_miktari == 5:
+            self.durdur.config(image=self.rfid_off)
+            messagebox.showinfo("Uyarı", "Kapı ile bağlantı Kurulamadi.")
+            self.hata_miktari = 0
+
+        else:
+            pass
 
 
-    def sil_members(self):
+    def sil_member(self):
         if verbose:
-            print('>>>user_interface.sil_members() fonksiyonuna giris yapiliyor...')
+            print('>>>user_interface.sil_member() fonksiyonuna giris yapiliyor...')
         MsgBox = messagebox.askquestion ('Uyarı','Silmek İçin Onaylayınız',icon = 'warning')
         if MsgBox == 'yes':
             self.selected_item = self.tree_2.selection()[0] ## get selected item
@@ -266,25 +322,26 @@ class user_interface(Frame):
                 sira = 0
 
             #
-            self.send_data_ = "delete" + "," + str(self.members_list[sira-1][0]) + "," + str(self.members_list[sira-1][2])
+            self.send_data_ = "delete" + "," + str(self.member_list[sira-1][0]) + "," + str(self.member_list[sira-1][2])
             self.tree_2.delete(self.selected_item)
-            self.data = sqlite3.connect("database/members.db")
+
+            self.data = sqlite3.connect("database/member.db")
             self.veri = self.data.cursor()
-            delete = self.veri.execute("Delete from people where kart_id='" + str(self.members_list[sira-1][2]) +  "'")
+            delete = self.veri.execute("Delete from people where kart_id='" + str(self.member_list[sira-1][2]) +  "'")
             self.data.commit()
             self.data.close()
             self.send_raspberry()
         else:
             pass
         if verbose:
-            print('<<<user_interface.sil_members() fonksiyonundan cikis yapiliyor...')
+            print('<<<user_interface.sil_member() fonksiyonundan cikis yapiliyor...')
 
 
 
 
-    def ekle_members(self):
+    def ekle_member(self):
         if verbose:
-            print('>>>user_interface.ekle_members() fonksiyonuna giris yapiliyor...')
+            print('>>>user_interface.ekle_member() fonksiyonuna giris yapiliyor...')
         self.popup = Toplevel()
         self.popup.geometry('370x155')
         self.popup.configure(background=self.bg)
@@ -320,17 +377,15 @@ class user_interface(Frame):
         self.sendButton    = Button(self.popup_frame_one,text = 'Bilgiyi Gönder',wraplength=750,anchor="center",height=1,width=13,highlightbackground=self.fg,font ="Helvetica 15 bold italic",fg=self.bg,command=self.send_data)
         self.sendButton.grid(row=3,column=0, sticky=W,padx= 120, pady = 25,columnspan=2,rowspan=1)
         if verbose:
-            print('<<<user_interface.ekle_members() fonksiyonundan cikis yapiliyor...')
+            print('<<<user_interface.ekle_member() fonksiyonundan cikis yapiliyor...')
         self.serial_degistir()
     def serial_degistir(self):
         if verbose:
             print('>>>user_interface.serial_degistir() fonksiyonuna giris yapiliyor...')
         if self.serial_durdur ==  "loop_end":
             self.serial_durdur = None
-            self.durdur.config(image=self.rfid_on)
         else:
             self.serial_durdur =  "loop_end"
-            self.durdur.config(image=self.rfid_off)
         if verbose:
             print('<<<user_interface.serial_degistir() fonksiyonundan cikis yapiliyor...')
 
@@ -338,10 +393,14 @@ class user_interface(Frame):
         if verbose:
             print('>>>user_interface.treeview_login_exit() fonksiyonuna giris yapiliyor...')
         self.frame_two.grid_remove()
+        self.frame_one.grid_remove()
         self.frame_one.grid(row=0,column=0)
         self.tree_1 = tkinter.ttk.Treeview(self.frame_one, height=31)
-        self.tree_1.place(x=55, y=95)
-        # self.tree_1.configure(bg = self.bg)
+        #self.tree_1.place(x=55, y=95)
+        try:
+            self.tree_2.grid_remove()
+        except:
+            pass
         vsb = tkinter.ttk.Scrollbar(self.frame_one, orient="vertical", command=self.tree_1.yview)
         vsb.place(x = 552, y=2, height=628)
         self.tree_1.configure(yscrollcommand=vsb.set)
@@ -369,17 +428,24 @@ class user_interface(Frame):
         self.canvas.configure(yscrollcommand=self.vscroll.set)
         self.tree_1.grid_rowconfigure(0, weight=1)
         self.tree_1.grid_columnconfigure(0, weight=1)
-        self.data = sqlite3.connect("database/register.db")
-        self.veri = self.data.cursor()
-        sira = 1
-        okunan = self.veri.execute("select * from people").fetchall()
-        for i in okunan:
-            veri = i[2].split(' ')
-            self.tree_1.insert('', 'end', text= sira, values=(i[1],i[0],veri[0],veri[1]))
-            sira = sira + 1
-        self.tree_1.insert('', 'end', text= sira, values=(' ',' ',' ',' '))
-        self.data.commit()
-        self.data.close()
+
+        try:
+            self.data = sqlite3.connect("database/register.db")
+            self.veri = self.data.cursor()
+            sira = 1
+            okunan = self.veri.execute("select * from people").fetchall()
+            for i in okunan:
+                veri = i[2].split(' ')
+                self.tree_1.insert('', 'end', text= sira, values=(i[1],i[0],veri[0],veri[1]))
+                sira = sira + 1
+            self.tree_1.insert('', 'end', text= sira, values=(' ',' ',' ',' '))
+            self.data.commit()
+            self.data.close()
+        except:
+            if verbose:
+                print("Database Hatasi")
+            else:
+                pass
         if verbose:
             print('<<<user_interface.treeview_login_exit() fonksiyonundan cikis yapiliyor...')
     def treeview_users(self):
@@ -387,7 +453,7 @@ class user_interface(Frame):
             print('>>>user_interface.treeview_users() fonksiyonuna giris yapiliyor...')
         self.frame_one.grid_remove()
         self.frame_two.grid(row=0,column=0)
-
+        self.tree_1.grid_remove()
         self.tree_2 = tkinter.ttk.Treeview(self.frame_two, height=27)
         self.tree_2.grid(row=0,column=0,rowspan=9)
 
@@ -416,14 +482,15 @@ class user_interface(Frame):
         self.canvas.configure(yscrollcommand=self.vscroll.set)
         self.tree_2.grid_rowconfigure(0, weight=1)
         self.tree_2.grid_columnconfigure(0, weight=1)
-        self.data = sqlite3.connect("database/members.db")
+
+        self.data = sqlite3.connect("database/member.db")
         self.veri = self.data.cursor()
         sira = 1
         okunan = self.veri.execute("select * from people").fetchall()
-        self.members_list = []
+        self.member_list = []
         for i in okunan:
             veri = i[2].split(' ')
-            self.members_list.append([i[0],i[1],i[2],i[3]])
+            self.member_list.append([i[0],i[1],i[2],i[3]])
             self.tree_2.insert('', 'end', text= sira, values=(i[1],i[0],i[3]))
             sira = sira + 1
         self.data.commit()
@@ -447,7 +514,8 @@ class user_interface(Frame):
             if self.studentNumber.get() != "" and self.studentNumber.get() != "Boş Birakilamaz." and self.studentNumber.get() != " " and self.studentNumber.get() != "  " and self.studentNumber.get() != "   ":
                 if self.TC_NO.get() != "" and self.TC_NO.get() != "Boş Birakilamaz." and self.TC_NO.get() != " " and self.TC_NO.get() != "  " and self.TC_NO.get() != "   ":
                     self.backup = "loop_end"
-                    self.data = sqlite3.connect("database/members.db")
+
+                    self.data = sqlite3.connect("database/member.db")
                     self.veri = self.data.cursor()
 
                     buKisiEklimi = self.veri.execute("select exists(select * from people where kart_id = '"+  str(self.message) + "')").fetchone()[0]
@@ -455,9 +523,18 @@ class user_interface(Frame):
                     self.data.close()
 
                     if buKisiEklimi == 0:#bu kişi ekli değil ekle
-                        self.data = sqlite3.connect("database/members.db")
+
+                        self.data = sqlite3.connect("database/member.db")
                         self.veri = self.data.cursor()
-                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?,?)",(self.name.get(), self.TC_NO.get(),self.message,datetime.today().strftime("%d / %m / %y | %H:%M:%S")))
+                        isim_soyisim = str(self.name.get())
+                        harfler = "ŞşĞğÜüİıÖöÇç"
+                        for i in harfler:
+                            for j in isim_soyisim:
+                                if i == j:
+                                    ceviri = self.translate(i)
+                                    isim_soyisim = isim_soyisim.replace(i,ceviri)
+                        print(isim_soyisim)
+                        self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?,?)",(isim_soyisim, self.TC_NO.get(),self.message,datetime.today().strftime("%d / %m / %y | %H:%M:%S")))
                         self.data.commit()
                         self.data.close()
                         if verbose:
@@ -469,7 +546,7 @@ class user_interface(Frame):
                             Kart Numarasi  : {}
                             """.format(self.name.get(),self.studentNumber.get(),self.TC_NO.get(),self.message))
 
-                        self.send_data_ = str(self.name.get()) + "," + str(self.TC_NO.get()) + "," + str(self.message)+ ","+str(datetime.today().strftime("%d / %m / %y | %H:%M:%S"))
+                        self.send_data_ = str(isim_soyisim) + "," + str(self.TC_NO.get()) + "," + str(self.message)+ ","+str(datetime.today().strftime("%d / %m / %y | %H:%M:%S"))
                         self.message = ""
                         self.name.delete(0, "end")
                         self.studentNumber.delete(0, "end")
@@ -483,7 +560,6 @@ class user_interface(Frame):
                         send.start()
                     else:
                         self.popup.destroy()
-                        print('**'*10,self.serial_durdur)
                         messagebox.showinfo("Uyarı", "Kişi Zaten Eklenmiş.")
 
                 else:
@@ -511,7 +587,6 @@ class user_interface(Frame):
             try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-                print('-----',self.send_data_)
                 self.send_data_ = self.send_data_.encode('utf-8')
                 veri.send(self.send_data_)
                 #data = s.recv(1024) #alinan veri
@@ -549,7 +624,6 @@ class user_interface(Frame):
             pass
         root.after(1000,run.data_waiting)
     def read_serial(self):
-        print(self.serial_durdur)
         if self.serial_durdur != "loop_end" :
             if verbose:
                 print('>>>user_interface.read_serial() fonksiyonuna giris yapiliyor...')
@@ -576,7 +650,6 @@ class user_interface(Frame):
     def read_data_interface(self):
         if verbose:
             print('>>>user_interface.read_data_interface() fonksiyonuna giris yapiliyor...')
-        print('--'*10,self.serial_durdur)
         self.frame_two.grid_remove()
         self.frame_one.grid(row = 0 ,column = 0)
 
@@ -598,11 +671,25 @@ class user_interface(Frame):
             print('>>>user_interface.request_data() fonksiyonuna giris yapiliyor...')
         hata = True
         self.backup = 'loop_end'
-        while hata:
+        while hata and self.hata_miktari != 5:
+            try:
+                self.data = sqlite3.connect("database/register.db")
+                self.veri = self.data.cursor()
+
+                alinan = self.veri.execute("select * from people").fetchall()
+
+                sayac = 0
+                for i in alinan:
+                    sayac = sayac + 1
+
+                self.data.commit()
+                self.data.close()
+            except:
+                sayac = 0
             try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-                text = str(True)  + "," + self.ip_adres
+                text = str(True)  + "," + self.ip_adres + ',' + str(sayac)
                 text = text.encode('utf-8')
                 veri.send(text)
                 veri.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
@@ -612,21 +699,24 @@ class user_interface(Frame):
                 mysocket.bind((self.ip_adres, int(config['veri']['raspberry_port'])))
                 mysocket.listen(5)
                 (client, (ip,port)) = mysocket.accept()
-                client.send(b"knock knock knock, I'm the server")
+                client.send(b"data")
                 data = client.recv(int(config['veri']['raspberry_buffer_size']))
                 alinan = data.decode()
                 mysocket.close()
                 self.alinan_veri = alinan
+                self.hata_miktari = 0
                 hata = False
                 if verbose:
                     print('>>>> Veri Alindi.<<<<<')
             except Exception as error_name:
                 if verbose:
-                    print('2__' +str(error_name))
+                    print('X__' +str(error_name))
                 else:
                     pass
+                self.hata_miktari = self.hata_miktari + 1
                 hata = True
-        self.giris_cikis_goster()
+        if self.hata_miktari != 5:
+            self.giris_cikis_goster()
         if verbose:
             print('<<<user_interface.request_data() fonksiyonundan cikis yapiliyor...')
     def request_data_2(self):
@@ -634,12 +724,22 @@ class user_interface(Frame):
             print('>>>user_interface.request_data_2() fonksiyonuna giris yapiliyor...')
         hata = True
         self.backup = 'loop_end'
-        while hata:
+        while hata and self.hata_miktari != 5:
+            try:
+                self.data = sqlite3.connect("database/member.db")
+                self.veri = self.data.cursor()
+                alinan = self.veri.execute("select * from people").fetchall()
+                sayac = 0
+                for i in alinan:
+                    sayac = sayac + 1
+                self.data.commit()
+                self.data.close()
+            except:
+                sayac = 0
             try:
                 veri = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 veri.connect((config['veri']['raspberry_ip'], int(config['veri']['raspberry_port'])))
-                text = str(False)  + "," + self.ip_adres
-                print('---',text)
+                text = str(False)  + "," + self.ip_adres + ',' + str(sayac)
                 text = text.encode('utf-8')
                 veri.send(text)
                 veri.recv(int(config['veri']['raspberry_buffer_size'])) #alinan veri
@@ -649,38 +749,38 @@ class user_interface(Frame):
                 mysocket.bind((self.ip_adres, int(config['veri']['raspberry_port'])))
                 mysocket.listen(5)
                 (client, (ip,port)) = mysocket.accept()
-                client.send(b"knock knock knock, I'm the server")
+                client.send(b"data")
                 data = client.recv(int(config['veri']['raspberry_buffer_size']))
                 alinan = data.decode()
                 mysocket.close()
                 self.alinan_veri = alinan
+                self.hata_miktari = 0
                 hata = False
             except Exception as error_name:
                 if verbose:
                     print('2__' +str(error_name))
                 else:
                     pass
+                self.hata_miktari = self.hata_miktari + 1
                 hata = True
-        self.user_goster()
+        if self.hata_miktari != 5:
+            self.user_goster()
+
         if verbose:
             print('<<<user_interface.request_data_2() fonksiyonundan cikis yapiliyor...')
     def giris_cikis_goster(self):
         if verbose:
             print('>>>user_interface.giris_cikis_goster() fonksiyonuna giris yapiliyor...')
-        if not(os.path.isfile("database/register.db")):
-            pass
-        else:
-            os.remove("database/register.db")
-            self.database.create_database_1()
 
         self.data = sqlite3.connect("database/register.db")
         self.veri = self.data.cursor()
         sayac= 0
         self.alinan_veri = self.alinan_veri.split(',')
-        for i in range(0,(len(self.alinan_veri) -1 )//4):
-            self.veri.execute("INSERT INTO people (ad_soyad,TC_Kimlik_No,giris_saat,cikis_saat) VALUES (?,?,?,?)",(self.alinan_veri[1+sayac],self.alinan_veri[2+sayac],self.alinan_veri[3+sayac],self.alinan_veri[4+sayac]))
-            self.data.commit()
-            sayac = sayac + 4
+        if self.alinan_veri[0] != 'False':
+            for i in range(0,(len(self.alinan_veri) -1 )//4):
+                self.veri.execute("INSERT INTO people (ad_soyad,TC_Kimlik_No,giris_saat,cikis_saat) VALUES (?,?,?,?)",(self.alinan_veri[1+sayac],self.alinan_veri[2+sayac],self.alinan_veri[3+sayac],self.alinan_veri[4+sayac]))
+                self.data.commit()
+                sayac = sayac + 4
 
         self.alinan_veri = ","
         self.data.close()
@@ -689,31 +789,28 @@ class user_interface(Frame):
     def user_goster(self):
         if verbose:
             print('>>>user_interface.user_goster() fonksiyonuna giris yapiliyor...')
-        if not(os.path.isfile("database/members.db")):
-            pass
-        else:
-            os.remove("database/members.db")
-            self.database.create_database_2()
 
-        self.data = sqlite3.connect("database/members.db")
+        self.data = sqlite3.connect("database/member.db")
         self.veri = self.data.cursor()
         sayac= 0
         self.alinan_veri = self.alinan_veri.split(',')
-        print(self.alinan_veri)
-        for i in range(0,(len(self.alinan_veri) -1 )//4):
-            self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?,?)",(self.alinan_veri[1+sayac],self.alinan_veri[2+sayac],self.alinan_veri[3+sayac],self.alinan_veri[4+sayac]))
-            self.data.commit()
-            sayac = sayac + 4
+        if  self.alinan_veri != "False":
+            for i in range(0,(len(self.alinan_veri) -1 )//4):
+                self.veri.execute("INSERT INTO people (ad_soyad,TC_no,kart_id,kayit_tarihi) VALUES (?,?,?,?)",(self.alinan_veri[1+sayac],self.alinan_veri[2+sayac],self.alinan_veri[3+sayac],self.alinan_veri[4+sayac]))
+
+                sayac = sayac + 4
 
         self.alinan_veri = ","
+        self.data.commit()
         self.data.close()
+        self.treeview_users()
+
         if verbose:
             print('<<<user_interface.user_goster() fonksiyonundan cikis yapiliyor...')
-        self.treeview_users()
+
 
 
 if __name__ == "__main__":
-    connect = configure_class()
     root = Tk()
     root.call('tk', 'scaling', 1.0)
     run = user_interface(root)
